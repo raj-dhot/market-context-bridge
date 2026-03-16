@@ -6,19 +6,19 @@ import re
 from duckduckgo_search import DDGS
 import trafilatura
 
-# Direct search queries for news
+# Refined queries to avoid triggering the political filter
 QUERIES = {
-    "North America (TSX & S&P 500)": "TSX OR S&P 500 stock market news",
+    "North America (TSX & S&P 500)": "TSX index OR S&P 500 equities markets",
     "International & Emerging (XEF/XEC)": "emerging markets OR international equities market news",
     "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management news"
 }
 
-# Top retail sentiment podcasts (Global + Vancouver/Canada specific)
+# The official RSS feeds for the top retail sentiment drivers
 PODCAST_FEEDS = {
-    "The Loonie Hour (Vancouver Real Estate & Canadian Macro)": "https://feeds.buzzsprout.com/1879571.rss",
+    "The Loonie Hour (Vancouver Real Estate & Canadian Macro)": "https://anchor.fm/s/103db19ac/podcast/rss",
     "Rational Reminder (Canadian Retail & Evidence-Based Investing)": "https://rationalreminder.libsyn.com/rss",
     "The Compound & Friends (US/Global Retail Sentiment)": "https://feeds.megaphone.fm/thecompound",
-    "All-In Podcast (Tech/Macro/VC Disruption)": "https://anchor.fm/s/2b0af938/podcast/rss"
+    "All-In Podcast (Tech/Macro/VC Disruption)": "https://allinchamathjason.libsyn.com/rss"
 }
 
 # Strict filter to keep the context clean
@@ -33,18 +33,18 @@ def is_political(text):
 
 def fetch_podcasts():
     output = "### SOCIAL & PODCAST SENTIMENT ###\n"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    # Using a highly specific browser User-Agent to bypass podcast host bot-blocks
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     
     for name, url in PODCAST_FEEDS.items():
         try:
             req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=10) as response:
+            with urllib.request.urlopen(req, timeout=15) as response:
                 xml_data = response.read()
             
             root = ET.fromstring(xml_data)
             channel = root.find('channel')
             if channel is not None:
-                # Grab the latest episode
                 item = channel.find('item')
                 if item is not None:
                     title = item.find('title')
@@ -71,17 +71,15 @@ def fetch_intelligence():
     output = f"OCEANFRONT RAW INTELLIGENCE - {today}\n"
     output += "="*50 + "\n\n"
     
-    # 1. Fetch News via DuckDuckGo & Trafilatura
     ddgs = DDGS()
     for category, query in QUERIES.items():
         output += f"### {category.upper()} ###\n"
         try:
-            # Increased to 8 max results to find more quality hits
             results = ddgs.news(query, max_results=8)
             valid_articles = 0
             
             for res in results:
-                if valid_articles >= 3: # Pulling up to 3 articles now
+                if valid_articles >= 3:
                     break
                     
                 title = res.get('title', '')
@@ -113,7 +111,6 @@ def fetch_intelligence():
         except Exception as e:
             output += f"Error processing category: {str(e)}\n\n"
 
-    # 2. Fetch Podcast Sentiment
     output += fetch_podcasts()
 
     with open("latest_news.txt", "w", encoding="utf-8") as f:
