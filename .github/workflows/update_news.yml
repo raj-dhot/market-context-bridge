@@ -22,8 +22,8 @@ jobs:
           python-version: '3.11'
 
       - name: Install Libraries
-        # Using BeautifulSoup4 instead of newspaper for better reliability
-        run: pip install beautifulsoup4
+        # Added 'requests' to handle the redirects efficiently
+        run: pip install beautifulsoup4 requests
 
       - name: Run Scraper
         run: python fetch_news.py
