@@ -3,7 +3,6 @@ import html
 import re
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -262,13 +261,13 @@ def extract_item_link(item):
             return guid_text
         video_id = extract_youtube_video_id(guid_text)
         if video_id:
-            return "https://www.youtube.com/watch?v={0}".format(video_id)
+            return f"https://www.youtube.com/watch?v={video_id}"
 
     video_id = extract_tag_text(item, "yt:videoId", "videoId")
     if video_id:
         normalized_video_id = extract_youtube_video_id(video_id)
         if normalized_video_id:
-            return "https://www.youtube.com/watch?v={0}".format(normalized_video_id)
+            return f"https://www.youtube.com/watch?v={normalized_video_id}"
 
     enclosure = find_first_tag(item, "enclosure")
     if enclosure and enclosure.get("url"):
@@ -301,14 +300,14 @@ def build_news_section():
 
     try:
         for category, query in NEWS_QUERIES.items():
-            lines.append("### {0} ###".format(category.upper()))
+            lines.append(f"### {category.upper()} ###")
             added = 0
             seen_urls = set()
 
             try:
                 results = get_news_results(ddgs, query)
             except Exception as exc:
-                lines.append("News fetch error: {0}".format(exc))
+                lines.append(f"News fetch error: {exc}")
                 lines.append("")
                 continue
 
@@ -333,11 +332,11 @@ def build_news_section():
                 source = normalize_whitespace(result.get("source")) or source_name_from_url(url)
                 lines.extend(
                     [
-                        "TITLE: {0}".format(title or "Untitled"),
-                        "SOURCE: {0}".format(source),
-                        "PUBLISHED: {0}".format(published or "Unknown"),
-                        "URL: {0}".format(url),
-                        "CONTENT: {0}".format(truncate_text(body, NEWS_BODY_MAX_CHARS)),
+                        f"TITLE: {title or 'Untitled'}",
+                        f"SOURCE: {source}",
+                        f"PUBLISHED: {published or 'Unknown'}",
+                        f"URL: {url}",
+                        f"CONTENT: {truncate_text(body, NEWS_BODY_MAX_CHARS)}",
                         "",
                     ]
                 )
@@ -383,11 +382,11 @@ def build_podcast_section(session):
 
             lines.extend(
                 [
-                    "SHOW: {0}".format(show_name),
-                    "EPISODE: {0}".format(title),
-                    "PUBLISHED: {0}".format(published),
-                    "URL: {0}".format(link),
-                    "DATA_TYPE: {0}".format(data_type),
+                    f"SHOW: {show_name}",
+                    f"EPISODE: {title}",
+                    f"PUBLISHED: {published}",
+                    f"URL: {link}",
+                    f"DATA_TYPE: {data_type}",
                     "DATA:",
                     truncate_text(content, EPISODE_TEXT_MAX_CHARS),
                     "-" * 50,
@@ -397,8 +396,8 @@ def build_podcast_section(session):
         except Exception as exc:
             lines.extend(
                 [
-                    "SHOW: {0}".format(show_name),
-                    "ERROR: {0}".format(exc),
+                    f"SHOW: {show_name}",
+                    f"ERROR: {exc}",
                     "-" * 50,
                     "",
                 ]
@@ -410,7 +409,7 @@ def build_podcast_section(session):
 def build_report():
     today = dt.datetime.now().strftime("%Y-%m-%d")
     sections = [
-        "OCEANFRONT DEEP INTELLIGENCE - {0}".format(today),
+        f"OCEANFRONT DEEP INTELLIGENCE - {today}",
         "=" * 50,
         "",
         build_news_section(),
