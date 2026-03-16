@@ -1,16 +1,16 @@
 import datetime
 import time
-import urllib.request
+import requests
 import xml.etree.ElementTree as ET
 import re
 from duckduckgo_search import DDGS
 import trafilatura
 
-# Refined queries to avoid triggering the political filter
+# Broadened queries to ensure high volume before the political filter applies
 QUERIES = {
-    "North America (TSX & S&P 500)": "TSX index OR S&P 500 equities markets",
-    "International & Emerging (XEF/XEC)": "emerging markets OR international equities market news",
-    "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management news"
+    "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
+    "International & Emerging (XEF/XEC)": "emerging markets international equities stock market",
+    "Competitor & AI Pulse": "Wealthsimple Questrade AI wealth management news"
 }
 
 # The official RSS feeds for the top retail sentiment drivers
@@ -33,16 +33,19 @@ def is_political(text):
 
 def fetch_podcasts():
     output = "### SOCIAL & PODCAST SENTIMENT ###\n"
-    # Using a highly specific browser User-Agent to bypass podcast host bot-blocks
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+    # Using a modern browser User-Agent and Accept headers to bypass podcast host bot-blocks
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+    }
     
     for name, url in PODCAST_FEEDS.items():
         try:
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=15) as response:
-                xml_data = response.read()
+            # Switched to 'requests' to natively handle complex redirects and server handshakes
+            response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
+            response.raise_for_status()
             
-            root = ET.fromstring(xml_data)
+            root = ET.fromstring(response.content)
             channel = root.find('channel')
             if channel is not None:
                 item = channel.find('item')
