@@ -13,12 +13,12 @@ QUERIES = {
     "Competitor & AI Pulse": "Wealthsimple Questrade AI wealth management news"
 }
 
-# The official RSS feeds for the top retail sentiment drivers
+# The official RSS feeds + The YouTube Backdoor for All-In
 PODCAST_FEEDS = {
     "The Loonie Hour (Vancouver Real Estate & Canadian Macro)": "https://anchor.fm/s/103db19ac/podcast/rss",
     "Rational Reminder (Canadian Retail & Evidence-Based Investing)": "https://rationalreminder.libsyn.com/rss",
     "The Compound & Friends (US/Global Retail Sentiment)": "https://feeds.megaphone.fm/TCP4771071679",
-    "All-In Podcast (Tech/Macro/VC Disruption)": "https://anchor.fm/s/2b0af938/podcast/rss"
+    "All-In Podcast (Tech/Macro/VC Disruption)": "https://www.youtube.com/feeds/videos.xml?channel_id=UCESLZhusAkFfsNsApnjF_Cg"
 }
 
 # Strict filter to keep the context clean
@@ -33,7 +33,6 @@ def is_political(text):
 
 def fetch_podcasts():
     output = "### SOCIAL & PODCAST SENTIMENT ###\n"
-    # Using a modern browser User-Agent and Accept headers to bypass podcast host bot-blocks
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'application/rss+xml, application/xml, text/xml, */*'
@@ -41,29 +40,30 @@ def fetch_podcasts():
     
     for name, url in PODCAST_FEEDS.items():
         try:
-            # Switched to 'requests' to natively handle complex redirects and server handshakes
             response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
             response.raise_for_status()
             
-            root = ET.fromstring(response.content)
-            channel = root.find('channel')
-            if channel is not None:
-                item = channel.find('item')
-                if item is not None:
-                    title = item.find('title')
-                    title_text = title.text if title is not None else 'No Title'
-                    
-                    desc = item.find('description')
-                    desc_text = desc.text if desc is not None else 'No Description'
-                    
-                    # Clean out the HTML tags to save tokens
-                    clean_desc = re.sub('<[^<]+>', ' ', desc_text)
-                    clean_desc = " ".join(clean_desc.split())
-                    
-                    output += f"SHOW: {name}\n"
-                    output += f"LATEST EPISODE: {title_text}\n"
-                    output += f"SHOW NOTES (SENTIMENT FUEL):\n{clean_desc[:1200]}...\n"
-                    output += "-"*50 + "\n\n"
+            # Use BeautifulSoup to gracefully handle both standard RSS and YouTube's Atom XML
+            soup = BeautifulSoup(response.content, 'xml')
+            
+            # YouTube uses <entry>, standard audio RSS uses <item>
+            item = soup.find('item') or soup.find('entry')
+            
+            if item:
+                title = item.find('title')
+                title_text = title.text if title else 'No Title'
+                
+                # YouTube stores descriptions in <media:description>, standard RSS uses <description>
+                desc = item.find('media:description') or item.find('description')
+                desc_text = desc.text if desc else 'No Description'
+                
+                clean_desc = re.sub('<[^<]+>', ' ', desc_text)
+                clean_desc = " ".join(clean_desc.split())
+                
+                output += f"SHOW: {name}\n"
+                output += f"LATEST EPISODE: {title_text}\n"
+                output += f"SHOW NOTES (SENTIMENT FUEL):\n{clean_desc[:1200]}...\n"
+                output += "-"*50 + "\n\n"
         except Exception as e:
             output += f"Error fetching {name}: {str(e)}\n\n"
             
