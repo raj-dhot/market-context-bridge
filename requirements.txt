@@ -1,3 +1,5 @@
 duckduckgo-search
 trafilatura
 requests
+beautifulsoup4
+lxml
