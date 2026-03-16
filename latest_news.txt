@@ -2,91 +2,47 @@ OCEANFRONT RAW INTELLIGENCE - 2026-03-16
 ==================================================
 
 ### NORTH AMERICA (TSX & S&P 500) ###
-TITLE: How Canadians Can Invest in the S&P 500, Nasdaq 100, and Dow Jones With ETFs
-SOURCE: Yahoo Finance Canada
+TITLE: Canada, U.S. stock markets rise amid softer increases in the price of oil
+SOURCE: BNN Bloomberg
 CONTENT:
-Written by Tony Dong, MSc, CETF® at The Motley Fool Canada
-So, you want to invest in U.S. stocks? That is probably a good idea. The U.S. stock market makes up roughly 60% of the global equity market. If you ignore it completely, you are leaving out a huge portion of global growth.
-But how you invest in U.S. stocks matters. You could try picking individual companies. For beginners, though, it usually makes more sense to use an index exchange-traded fund (ETF). This gives you instant diversification and keeps costs low.
-Let’s walk through three popular ways Canadians can get exposure to U.S. stocks using ETFs that track the S&P 500, the Nasdaq 100, and the Dow Jones Industrial Average.
-The S&P 500 Option
-If you want broad exposure to the U.S. economy, BMO S&P 500 Hedged to CAD Index ETF (TSX:ZUE) is a straightforward choice.
-This ETF tracks the S&P 500, which holds 500 large U.S. companies selected for their size, liquidity, and consistent earnings. Think of it as a snapshot of corporate America. You get exposure to technology, healthcare, consumer companies, industrials, and more.
-ZUE is affordable, with a 0.09% expense ratio. That means you pay $9 per year for every $10,000 invested.
-It is also currency-hedged. That means the ETF aims to remove the impact of movements between the U.S. dollar and the Canadian dollar. If the U.S. dollar weakens, your returns are not dragged down. The trade-off is that hedging is not free and can slightly reduce long-term performance.
-Also, like most Canadian-listed ETFs that hold U.S. stocks, dividends are subject to a 15% U.S. withholding tax. That creates a small drag over time. Still, if you want simple, diversified U.S. exposure, ZUE gets the job done.
-The Nasdaq 100 Option
-If you want to lean harder into innovation and growth, BMO Nasdaq 100 Equity Hedged to CAD Index ETF (TSX:ZQQ) may appeal.
-Unlike the S&P 500, the Nasdaq 100 holds only 100 companies. It excludes financial stocks entirely and is heavily tilted toward technology and growth companies. Just 10 stocks can make up more than half of the portfolio.
-This means more exposure to themes like artificial intelligence, cloud computing, semiconductors, and digital advertising. If those areas thrive, ZQQ can outperform broader indexes.
-But there are trade-offs. The yield is lower because many of these companies reinvest profits instead of paying dividends. The fund is also more expensive, with a 0.39% expense ratio. And because it is more concentrated, it can be more...
---------------------------------------------------
-
-TITLE: TSX Claws Back from Gully
-SOURCE: Baystreet.ca
-CONTENT:
-Canada's main ?stock index came out of its cave by noon EST on Tuesday, joining a global market slide driven by inflation fears as the Middle East ?conflict entered its fourth ?day.
-The TSX remained negative 864.31 points, or 2.5%, however, to 33,676.96.
-The selloff in global stocks deepened on Monday as the conflict in Middle East spiked energy prices, raising fears of inflation among investors.
-Prime Minister Mark Carney reached Australia on Tuesday, as the country seeks to diversify trade relations beyond the U.S. Carney is on a multi-leg trip across the Asia-Pacific region, also taking in Japan and India.
-In after-market earnings on Monday, Capstone Copper reported quarterly profit below estimates. The copper producer's shares in Toronto shook off $1.02, or 7.4%, to $12.69.
-ON BAYSTREET
-The TSX Venture Exchange stumbled 40.73 points, or 3.6%, to 1,076.87.
-All but two of 12 TSX subgroups were lower, with gold plummeting 7.3%, materials, off69.2%, and consumer discretionary stocks dwindling 1.9%.
-Energy gained ground 0.5%, while telecoms inched up 0.2%.
-ON WALLSTREET
-U.S. equities tumbled on Tuesday, undoing a Monday equity comeback, as oil prices spiked again and traders worried that the U.S.-Iran war could drag on longer than anticipated.
-The Dow Jones Industrial Average came off its lows of the morning, but still trailed breakeven by 657.05 points, or 1.3%, to 48,247.73.
-The S&P 500 slumped 90.76 points, or 1.3%, to 6,791.36.
-The NASDAQ dumped 349.33 points, or 1.5%, to 22,402.24
-Each of the S&P 500 sectors were in the red on Tuesday, with all but energy down more than 1% on the day. Materials, industrials and consumer discretionary sectors saw the biggest losses on fears that higher oil prices and borrowing costs could weigh on the U.S. economy.
-Several major tech stocks, such as Nvidia, that led the Monday intraday comeback were lower on Tuesday. U.S. memory stocks were also under pressure and were poised to follow the notable declines seen in memory chip stocks in South Korea.
-Additionally, shares of Blackstone fell 7% after the Financial Times reported that its private credit fund saw $1.7 billion in net outflows in the first quarter.
-Iranian Revolutionary Guard commander said the Strait of Hormuz — the world’s most vital transit route for crude oil — is closed and that Iran would set ablaze ships attempting the route, Reuters reported, citing Iranian media.
-President Donald Trump has warned that the conflict could continue for more than four week...
---------------------------------------------------
-
-TITLE: New Peak for TSX at Open
-SOURCE: Baystreet.ca
-CONTENT:
-Canada's main stock index opened at a record high on Wednesday, as firmer precious metal prices lifted mining stocks, while solid corporate earnings propelled financial stocks.
-The TSX added 68.38 points to begin the session at 34,038.76.
-The Canadian dollar eked up 0.03 cents at 73.01 cents U.S.
-Automotive fleet manager Element Fleet Management reported fourth-quarter profit marginally lower than estimates in aftermarket earnings. Shares in Element Fleet doffed 99 cents, or 2.9%, to $33.47.
-Investors will keep an eye on Bank of Montreal and National Bank of Canada, which will report their earnings before the bell. Shares in the “First Canadian Bank” began the day up $6.02, or 3.1%, to $201.08.
-National shares captured $10.02, or 5.7%, to $187.48.
-ON BAYSTREET
-The TSX Venture Exchange gained 15.31 points, or 1.4%, to 1,080.61.
-Seven of the 12 TSX subgroups were lower in the first hour, with consumer staples down 1.7%, energy 1.3% less energetic, and consumer discretionary stocks off 0.9%.
-The five gainers were led by information technology, up 1.9%, financials ahead 0.6%, and gold, brighter by 0.5%.
-ON WALLSTREET
-U.S. equities rose on Wednesday, supported by Nvidia and Oracle, as stocks look to build on the gains from the prior trading day.
-The Dow Jones Industrial Average tallied 92.84 points to 49,267.34
-The S&P 500 index gained 31.07 points to 6,921.14.
-The NASDAQ flew 216.31 points, or 1%, to 23,079.37.
-Shares of Nvidia were up 1% ahead of its earnings report, which is scheduled to be released after the bell along with results from software giant Salesforce and Snowflake, due after Wednesday’s market close.
-Nvidia’s report comes at a time when investors are recalibrating lofty tech stock valuations and growing skeptical on hyperscalers’ high AI capital expenditures.
-Fellow artificial intelligence player Oracle jumped more than 4%, leading the continued bounce in software stocks, after the name was upgraded at Oppenheimer, which sees a “favorable” risk-reward profile in the wake of its recent pullback.
-Software and cybersecurity stocks also saw a relief rally in the regular session after Anthropic launched a new connectors and plugins for its knowledge worker tool, Claude Cowork, that will allow companies to connect the AI tool to their existing apps such as Google Drive. Claude Cowork rattled the software sector in recent weeks as investors feared the tool would disrupt incumbent software vendors’ businesses.
-Prices for the 10-year Treasury faded, rais...
+TORONTO — After two days of volatile swings, stock markets gained ground on Wednesday as the rise in oil prices eased.
+“Today has been certainly much calmer than Monday and Tuesday were, so that’s coming as some relief,” said Kevin Burkett, portfolio manager at Victoria-based Burkett Asset Management.
+“I think that’s not a reflection of stability as much as differences in opinions on whether we are entering a protracted Middle East conflict or something shorter term.”
+Uncertainty about the U.S.-Iran conflict has sent prices in financial markets careening up and down this week, with most taking their cues from what the price of oil is doing.
+The April crude oil contract was up 10 cents US at US$74.66 per barrel.
+“Looking at today’s move in crude, we’re in very much the mid-US$70s range, which is up almost US$10 week-over-week,” Burkett said.
+In financial markets, worries are centred on how long the war with Iran could last, how high inflation will go because of more expensive oil and how much corporate profits will sink because of it.
+The S&P/TSX composite index was up 157.92 points at 33,942.86.
+In New York, the Dow Jones industrial average was up 238.14 points at 48,739.41. The S&P 500 index was up 52.87 points at 6,869.50, while the Nasdaq composite was up 290.79 points at 22,807.48.
+The U.S. stock market has a history of shaking off military conflicts in the Middle East relatively quickly, though that comes with the caveat that oil prices don’t jump too high.
+Big tech stocks, meanwhile, were the strongest forces lifting the market. Amazon rose 3.9 per cent, and Nvidia added 1.7 per cent. Because they’re among the biggest stocks in the U.S. market in terms of total value, their movements carry more weight on the S&P 500.
+Stocks also got a boost from signs of strength for the U.S. economy.
+One report said growth for U.S. businesses in the real estate, finance and other services industries accelerated last month at the fastest pace since the summer of 2022. Encouragingly for inflation, it also said prices for such businesses are increasing at a slower rate, at least before the war with Iran began.
+A second report suggested U.S. employers outside of the government picked up their hiring last month. That could be a hopeful signal for the more comprehensive report coming Friday from the U.S. government about the overall job market.
+In the Canadian stock market, much of the gains were coming from the technology sector. That part of the market was led by Shopif...
 --------------------------------------------------
 
 ### INTERNATIONAL & EMERGING (XEF/XEC) ###
-TITLE: Market Mayhem: Middle East Tensions Ripple Through Global Equities
-SOURCE: Devdiscourse
+TITLE: Higher Emerging Market Potential or Balanced Global Growth? SCHE vs. VXUS
+SOURCE: The Motley Fool
 CONTENT:
-Market Mayhem: Middle East Tensions Ripple Through Global Equities
-Emerging market equities faced a significant downturn due to escalating Middle East tensions impacting energy supplies. The shock affected Asian and global markets, leading to a historic dip in Korean stocks. This instability has also influenced the MSCI index and emerging European markets amid international economic uncertainties.
-The financial world is on edge as emerging market equities extend their downturn, driven by heightened Middle East unrest that threatens crucial energy supplies. South Korea faced a historic plummet, with stocks diving 12.1% as Iran's hostilities disrupt oil routes, affecting global markets.
-The Asian markets bore the brunt of this supply shock, particularly due to their reliance on the Strait of Hormuz, now hampered by Iran's actions. The MSCI emerging markets index fell significantly, with potential for the steepest weekly drop since the 2008 crisis.
-While Middle Eastern stock exchanges showed mixed performances, with some rebounding, European markets saw varied responses as the National Bank of Poland's rate decision added uncertainty. Meanwhile, South African stocks gained from rising gold prices amid regional currency fluctuations.
-(With inputs from agencies.)...
+Vanguard Total International Stock ETF (NASDAQ:VXUS) offers broader global diversification and a lower expense ratio, while Schwab Emerging Markets Equity ETF (NYSEMKT:SCHE) focuses on emerging markets with a tech-heavy tilt and slightly higher costs.
+Both VXUS and SCHE aim to give investors exposure to stocks outside the United States, but they go about it in different ways. VXUS spans both developed and emerging non-U.S. markets with more than 8,600 holdings, while SCHE zeroes in on emerging markets and carries a much more concentrated portfolio. This comparison highlights key differences in cost, performance, sector exposure, and risk.
+Snapshot (cost & size)
+Beta measures price volatility relative to the S&P 500; beta is calculated from five-year monthly returns. The 1-yr return represents total return over the trailing 12 months.
+SCHE is slightly pricier, with an expense ratio of 0.07% compared to VXUS at 0.05%. Both funds offer similar dividend yields, though VXUS edges out SCHE by 0.2 percentage points for a modestly higher payout.
+Performance & risk comparison
+VXUS has weathered market downturns with a smaller five-year max drawdown and delivered stronger five-year growth of $1,000 invested, reflecting its broader diversification and exposure to developed markets. SCHE’s deeper drawdown and lower five-year growth highlight the higher volatility and risk that often come with an emerging markets focus.
+What's inside
+SCHE tracks the FTSE Emerging Index, concentrating on markets like China, Taiwan, and India with 2,163 holdings as of its 16.1-year track record. Technology dominates at 25%, followed by financial services and consumer cyclicals. The top three holdings—Taiwan Semiconductor Manufacturing (2330.TW) 14.75%, Tencent Holdings Ltd (0700.HK) 3.85%, and Alibaba Group Holding Ltd (9988.HK) 3.11%—make up over 21% of assets, which increases concentration risk compared to more evenly spread funds.
+VXUS, by contrast, is far broader, holding more than 8,600 stocks across both developed and emerging economies. Its largest sector weights go to financial services, technology, and industrials, but no single company comprises more than 0.01% of assets, with names like Dongfang Electronics Co Ltd (000682.SZ), FAW Jiefang Group Co Ltd (000800.SZ), and STO Express Co Ltd (002468.SZ) among the top positions. This approach delivers much wider diversification and reduces single-country or company risk.
+For more guidance on ETF investing, check out the full guide a...
 --------------------------------------------------
 
 TITLE: The S&P 500 Trails the Global Stock Market by Its Widest Margin Since 1995 as President Trump's Policies Rattle Investors
 SOURCE: The Motley Fool
 CONTENT:
-The S&P 500 (^GSPC +1.04%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
+The S&P 500 (^GSPC +1.01%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
 The S&P 500 has not lagged the MSCI ACWI ex US Index by such a wide margin at this point in any year since 1995, according to Kevin Gordon, head of macro research and strategy at Charles Schwab.
 In fact, the global stock market has consistently outperformed the U.S. stock market during President Trump's second term due to concerns that his trade policies will hurt the U.S. economy (although that is now in question due to the Supreme Court overturning most of the tariffs). And some analysts expect that outperformance to continue in future years, especially in emerging markets. Here's what investors should know.
 The global stock market has crushed the S&P 500 under President Trump
@@ -98,24 +54,6 @@ Goldman Sachs analysts led by Peter Oppenheimer estimate the S&P 500 will compou
 - Europe: 7.5% annually
 - Japan: 12% annually
 - Asia (excluding Japan): 12.6% annually...
---------------------------------------------------
-
-TITLE: Orbis brings Japan, EM and international equities funds to UK market
-SOURCE: Portfolio Adviser
-CONTENT:
-Orbis Investments is making three additional equities strategies available to UK investors.
-Orbis Japan Equity, Orbis Emerging Markets Equity and Orbis International Equity each offer a distinct objective and reference benchmark, the firm said.
-The main focus of all three continues to be identifying undervalued companies, which may result in the funds differing significantly from benchmarks or peers.
-The funds are available via Orbis’ refundable reserve fee, performance-linked structure, or through a fixed-fee share class.
-The Orbis SICAV Japan Equity fund is managed by Brett Moshal and Alex Bowles, unconstrained by benchmark weightings. The firm said it offers diversification benefits through low correlation to other developed market indices.
-The second additional offering, the Orbis SICAV Emerging Markets Equity fund, is managed by Stefan Magnusson and Stanley Lu. It is characterised by its ‘highly selective, research-driven approach’, the asset manager said.
-See also: Morningstar: Multi-asset funds still struggle to beat benchmarks
-Completing the trio, the Orbis SICAV International Equity fund is managed by Graeme Forster and provides global ex-US equity exposure at a time of high US concentration in global indices.
-Matthew Spencer, head of UK retail at Orbis, said: “We are hearing a consistent message from advisers, discretionary fund managers, wealth managers and family offices in the UK.
-“They are recognising the need for more diversified global exposure outside the US in the form of high-conviction building blocks that offer differentiated exposure and complement core allocations.
-“Our Japan and emerging markets funds provide just that, having delivered strong track records while bearing very little resemblance to their benchmarks.
-“Our international fund, while not a common category in the UK, directly addresses the challenge of a concentrated US market.
-“We believe this strategy offers a compelling option for clients seeking diversification away from the top-heavy US markets, and it has likewise achieved impressive returns despite the outperformance of the US equity market.”...
 --------------------------------------------------
 
 ### COMPETITOR & AI PULSE ###
@@ -134,18 +72,6 @@ Advisors themselves want the time to provide that level of guidance. Today, howe
 The real disruption will come from how quickly and effectively firms implement AI, not from AI itself. Legacy institutions face structural challenges in harnessing the technology because their fragmented systems limit how inform...
 --------------------------------------------------
 
-TITLE: AI Is Redefining Wealth Management
-SOURCE: Institutional Investor
-CONTENT:
-Consulting firm McKinsey has predicted a transformative decade for wealth management in the United States, arguing that wealth management for high-net-worth individuals will increasingly look more like “life management” as offerings evolve through increased use of artificial intelligence.
-What has traditionally been the domain of ultra-high-net-worth investors will become more readily available for clients with lower net worths, McKinsey said in a new report. Access to improved technology, including agentic AI and greater data integration, will allow wealth managers to implement more bespoke services to a broader set of clients. These services include financial planning, family governance, tax and estate structuring, trust administration, customized insurance, balance sheet optimization, philanthropy, medical concierge, and lifestyle services, per the report.
-“When we survey individual investors, whether they have $100,000 or $100 million in investable assets, there was a very clear trend: They want a more holistic set of services, capabilities, and support,” said Vlad Golyk, head of McKinsey’s wealth management practice. However, the current human-driven system involves a lot of work and a lot of expense, he said, adding that family offices are essentially a very expensive human middleware between disconnected financial systems and data.
-“AI and data platforms will make everything cheaper,” he said. “This might sound futuristic, but if AI can do 80 percent of the work and have it overseen by people, then the unit economics of these types of services will go down. That means wealth management firms can start offering those services to more people because of the economics.”
-However, such cost savings will require an upfront investment, including deep integration of technology through partnerships and acquisitions, as well as a dedicated focus on how best to govern new systems.
-This could pose an existential risk to the wealth management industry, said Golyk, warning that a new set of technology companies could take market share from traditional wealth managers in an AI-driven marketplace. However, he believes existing players will adapt to fill the space.
-“There is absolutely space for an AI-first business model, similar to what we had with robo advisors,” he said. “But people still want the human touch. Finance is just as much as much about numbers as it is about emotions; the competitive edge would belong to those who can combine this autonomous intellige...
---------------------------------------------------
-
 ### SOCIAL & PODCAST SENTIMENT ###
 SHOW: The Loonie Hour (Vancouver Real Estate & Canadian Macro)
 LATEST EPISODE: Oil Prices Are Surging — Is Inflation Next?
@@ -159,7 +85,7 @@ SHOW NOTES (SENTIMENT FUEL):
 In this special 400th episode, the Rational Reminder hosts reflect on 50 years of index investing and the profound impact it has had on financial markets, investor behavior, and the cost of investing. The episode features a panel moderated by Ben Felix at the New York Stock Exchange—hosted by Vanguard and S&P Dow Jones Indices—bringing together leading voices in the indexing world to explore how passive investing evolved and what it means for the future of capital markets. Ben is joined on the panel by Tim Edwards (S&P Dow Jones Indices), Jim Rowley (Vanguard), and Shelly Antoniewicz (Investment Company Institute) to discuss the mechanics of indexing, the myths surrounding passive investing, and the evidence on how index funds affect markets. They unpack questions about market concentration, price discovery, and whether indexing is changing the structure of capital markets. Key Points From This Episode: (0:00:04) Introduction to the Rational Reminder podcast and the hosts from PWL Capital. (0:00:24) Celebrating the 400th episode and reflecting on nearly eight years of podcasting. (0:01:09) Dan Bortolotti discusses the early days of podcasting and the transition from the Couch Potat...
 --------------------------------------------------
 
-Error fetching The Compound & Friends (US/Global Retail Sentiment): HTTP Error 404: Not Found
+Error fetching The Compound & Friends (US/Global Retail Sentiment): 404 Client Error: Not Found for url: https://feeds.megaphone.fm/thecompound
 
 SHOW: All-In Podcast (Tech/Macro/VC Disruption)
 LATEST EPISODE: Iran War, Oil Shock, Off Ramps, AI's Revenue Explosion and PR Nightmare
