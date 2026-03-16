@@ -1,73 +1,79 @@
-import requests
-import xml.etree.ElementTree as ET
-from bs4 import BeautifulSoup
 import datetime
+import time
+from duckduckgo_search import DDGS
+import trafilatura
 
-# Broadened queries for high volume
-FEEDS = {
-    "North America (TSX & S&P 500)": "https://news.google.com/rss/search?q=TSX+OR+%22S%26P+500%22+market&hl=en-CA&gl=CA&ceid=CA:en",
-    "International & Emerging (XEF/XEC)": "https://news.google.com/rss/search?q=%22emerging+markets%22+OR+%22international+equities%22&hl=en-CA&gl=CA&ceid=CA:en",
-    "Competitor & AI Pulse": "https://news.google.com/rss/search?q=Wealthsimple+OR+Questrade+OR+%22AI+wealth%22&hl=en-CA&gl=CA&ceid=CA:en"
+# Direct search queries
+QUERIES = {
+    "North America (TSX & S&P 500)": "TSX OR S&P 500 stock market news",
+    "International & Emerging (XEF/XEC)": "emerging markets OR international equities market news",
+    "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management news"
 }
 
-POLITICAL_KEYWORDS = ["election", "parliament", "congress", "trudeau", "biden", "conservative", "liberal", "democrat", "republican"]
+# Strict filter to keep the context clean
+POLITICAL_KEYWORDS = [
+    "election", "parliament", "congress", "trudeau", "biden", 
+    "conservative", "liberal", "democrat", "republican", "campaign", "senate"
+]
 
 def is_political(text):
+    if not text: return False
     return any(keyword in text.lower() for keyword in POLITICAL_KEYWORDS)
 
-def clean_html_snippet(raw_html):
-    """Strips the HTML formatting out of the Google News description tag to get the raw text snippet."""
-    if not raw_html:
-        return "No summary available."
-    soup = BeautifulSoup(raw_html, 'html.parser')
-    text = soup.get_text(separator=" | ")
-    # Clean up excess whitespace
-    return " ".join(text.split())
-
-def build_briefing_data():
+def fetch_intelligence():
     today = datetime.datetime.now().strftime("%Y-%m-%d")
-    output = f"RAW INTELLIGENCE DATA (SNIPPETS) - {today}\n"
+    output = f"OCEANFRONT RAW INTELLIGENCE - {today}\n"
     output += "="*50 + "\n\n"
     
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-
-    for category, rss_url in FEEDS.items():
+    ddgs = DDGS()
+    
+    for category, query in QUERIES.items():
         output += f"### {category.upper()} ###\n"
         try:
-            response = requests.get(rss_url, headers=headers, timeout=10)
-            root = ET.fromstring(response.content)
+            # Get the top 5 direct news results from DuckDuckGo
+            results = ddgs.news(query, max_results=5)
+            valid_articles = 0
             
-            valid_articles_found = 0
-            
-            # Pull the top 5 valid snippets per category
-            for item in root.findall('.//item'):
-                if valid_articles_found >= 5: 
+            for res in results:
+                if valid_articles >= 2: # Stop at 2 high-quality pieces to save Claude's context window
                     break
                     
-                title = item.find('title').text
+                title = res.get('title', '')
+                url = res.get('url', '')
                 
                 if is_political(title):
                     continue
                 
-                # Grab the description directly from the RSS feed (no external site visits)
-                desc_element = item.find('description')
-                raw_snippet = desc_element.text if desc_element is not None else ""
-                clean_snippet = clean_html_snippet(raw_snippet)
+                # Fetch the HTML and extract pure text, bypassing cookie banners
+                downloaded = trafilatura.fetch_url(url)
+                if not downloaded:
+                    continue
+                    
+                body = trafilatura.extract(downloaded, include_comments=False, include_tables=False)
                 
+                # If it's a paywall stub (<300 chars), political, or empty, skip it
+                if not body or len(body) < 300 or is_political(body):
+                    continue
+                    
                 output += f"TITLE: {title}\n"
-                output += f"SUMMARY: {clean_snippet}\n"
-                output += "-"*40 + "\n\n"
+                output += f"SOURCE: {res.get('source', 'Unknown')}\n"
+                output += f"LINK: {url}\n"
                 
-                valid_articles_found += 1
+                # Truncate to 2500 characters so the agent isn't overwhelmed with noise
+                output += f"CONTENT:\n{body[:2500]}...\n"
+                output += "-"*50 + "\n\n"
                 
-            if valid_articles_found == 0:
-                output += "No non-political headlines found for this category today.\n\n"
+                valid_articles += 1
+                time.sleep(2) # Polite delay
+                
+            if valid_articles == 0:
+                output += "No readable, non-political articles successfully extracted today.\n\n"
                 
         except Exception as e:
-            output += f"Error fetching feed: {str(e)}\n\n"
+            output += f"Error processing category: {str(e)}\n\n"
 
     with open("latest_news.txt", "w", encoding="utf-8") as f:
         f.write(output)
 
 if __name__ == "__main__":
-    build_briefing_data()
+    fetch_intelligence()
