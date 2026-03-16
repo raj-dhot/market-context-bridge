@@ -2,8 +2,7 @@ name: Weekly Deep-Dive News Fetcher
 
 on:
   schedule:
-    # Runs at 13:00 UTC (6:00 AM PDT) every Monday
-    - cron: '0 13 * * 1'
+    - cron: '0 13 * * 1' # Runs 6:00 AM PDT every Monday
   workflow_dispatch: 
 
 jobs:
@@ -22,8 +21,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Libraries
-        # Added 'requests' to handle the redirects efficiently
-        run: pip install beautifulsoup4 requests
+        run: pip install -r requirements.txt
 
       - name: Run Scraper
         run: python fetch_news.py
