@@ -1,34 +1,37 @@
-name: Weekly News Fetcher
+name: Weekly Deep-Dive News Fetcher
 
 on:
   schedule:
-    # Runs at 10:00 UTC (3:00 AM PDT) every Monday.
-    - cron: '0 10 * * 1'
-  workflow_dispatch: # Allows you to run it manually by clicking a button
+    # Runs at 13:00 UTC (6:00 AM PDT) every Monday
+    - cron: '0 13 * * 1'
+  workflow_dispatch: 
 
 jobs:
-  update-data:
+  fetch-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Grants permission to push the file back to the repo
+      contents: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repo
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
-      - name: Run scraper
+      - name: Install Libraries
+        # Using BeautifulSoup4 instead of newspaper for better reliability
+        run: pip install beautifulsoup4
+
+      - name: Run Scraper
         run: python fetch_news.py
 
-      - name: Commit and push changes
+      - name: Commit News to Repo
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "Market-Intelligence-Bot"
+          git config --global user.email "bot@oceanfront.wealth"
           git add latest_news.txt
-          # The || exit 0 prevents the workflow from failing if there are no new changes
-          git commit -m "Auto-update weekly market news" || exit 0
+          git commit -m "Automated update: Weekly Market Intelligence [$(date +'%Y-%m-%d')]" || exit 0
           git push
