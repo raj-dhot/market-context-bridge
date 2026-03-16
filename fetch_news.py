@@ -580,7 +580,7 @@ def build_podcast_section(session):
 def build_report():
     today = dt.datetime.now().strftime("%Y-%m-%d")
     sections = [
-        f"OCEANFRONT DEEP INTELLIGENCE - {today}",
+        f"OCEANFRONT MARKET INTELLIGENCE - {today}",
         "=" * 50,
         "",
         build_news_section(),
