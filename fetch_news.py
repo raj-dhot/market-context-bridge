@@ -17,8 +17,8 @@ QUERIES = {
 PODCAST_FEEDS = {
     "The Loonie Hour (Vancouver Real Estate & Canadian Macro)": "https://anchor.fm/s/103db19ac/podcast/rss",
     "Rational Reminder (Canadian Retail & Evidence-Based Investing)": "https://rationalreminder.libsyn.com/rss",
-    "The Compound & Friends (US/Global Retail Sentiment)": "https://feeds.megaphone.fm/thecompound",
-    "All-In Podcast (Tech/Macro/VC Disruption)": "https://allinchamathjason.libsyn.com/rss"
+    "The Compound & Friends (US/Global Retail Sentiment)": "https://feeds.megaphone.fm/TCP4771071679",
+    "All-In Podcast (Tech/Macro/VC Disruption)": "https://anchor.fm/s/2b0af938/podcast/rss"
 }
 
 # Strict filter to keep the context clean
