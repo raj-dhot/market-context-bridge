@@ -30,13 +30,12 @@ def fetch_intelligence():
     for category, query in QUERIES.items():
         output += f"### {category.upper()} ###\n"
         try:
-           # Ask DuckDuckGo for 10 results instead of 5
-            results = ddgs.news(query, max_results=10)
+           # Get the top 5 direct news results from DuckDuckGo
+            results = ddgs.news(query, max_results=5)
             valid_articles = 0
             
             for res in results:
-                # Increase the cap to 4 valid articles per category
-                if valid_articles >= 4: 
+                if valid_articles >= 2: # Stop at 2 high-quality pieces
                     break
                     
                 title = res.get('title', '')
