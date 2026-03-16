@@ -1,2 +1,2 @@
-newspaper4k
-feedparser
+duckduckgo-search
+trafilatura
