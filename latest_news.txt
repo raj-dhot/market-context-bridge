@@ -42,7 +42,7 @@ For more guidance on ETF investing, check out the full guide a...
 TITLE: The S&P 500 Trails the Global Stock Market by Its Widest Margin Since 1995 as President Trump's Policies Rattle Investors
 SOURCE: The Motley Fool
 CONTENT:
-The S&P 500 (^GSPC +1.02%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
+The S&P 500 (^GSPC +1.09%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
 The S&P 500 has not lagged the MSCI ACWI ex US Index by such a wide margin at this point in any year since 1995, according to Kevin Gordon, head of macro research and strategy at Charles Schwab.
 In fact, the global stock market has consistently outperformed the U.S. stock market during President Trump's second term due to concerns that his trade policies will hurt the U.S. economy (although that is now in question due to the Supreme Court overturning most of the tariffs). And some analysts expect that outperformance to continue in future years, especially in emerging markets. Here's what investors should know.
 The global stock market has crushed the S&P 500 under President Trump
@@ -73,23 +73,11 @@ The real disruption will come from how quickly and effectively firms implement A
 --------------------------------------------------
 
 ### SOCIAL & PODCAST SENTIMENT ###
-SHOW: The Loonie Hour (Vancouver Real Estate & Canadian Macro)
-LATEST EPISODE: Oil Prices Are Surging — Is Inflation Next?
-SHOW NOTES (SENTIMENT FUEL):
-Oil tops $100, prompting fears of an energy crisis. Fertilizer prices have jumped nearly 80%. How bad will the next wave of inflation be?OSFI flags appraisal issues. Private credit crunch deepens. Join Us For The Loonie Hour Investor Series - With Ben Rabidoux, Live In Calgary on March 23rd, and Vancouver on March 25th! Get Your Tickets Here! Calgary - https://www.eventbrite.com/e/loonie-hour-investor-series-with-ben-rabidoux-calgary-tickets-1984582823649?aff=oddtdtcreator Vancouver - https://www.eventbrite.com/e/loonie-hour-investor-series-with-ben-rabidoux-vancouver-tickets-1984583594956?aff=oddtdtcreator Start an investment portfolio that&#39;s built to perform with Neighbourhood Holdings! For Investors and Advisors: https://www.neighbourhood.com/looniehour For Mortgage Brokers: https://www.neighbourhood.com/looniehour-brokers ✉️ Media &amp; Real Estate Inquries: steve@stevesaretsky.com Stay up to date with our information - 📫 My Real Estate Substack: https://stevesaretsky.substack.com 📫 The Loonie Hour Substack: https://looniehour.substack.com/about 📊➡️ Loonie Hour Socials: https://linktr.ee/looniehour 🎙️ Listen to the Podcast on Your Preferred Platform: https://linktr.ee/looni...
---------------------------------------------------
+Error fetching The Loonie Hour (Vancouver Real Estate & Canadian Macro): name 'BeautifulSoup' is not defined
 
-SHOW: Rational Reminder (Canadian Retail & Evidence-Based Investing)
-LATEST EPISODE: Episode 400: The Evolution of Index Fund Investing
-SHOW NOTES (SENTIMENT FUEL):
-In this special 400th episode, the Rational Reminder hosts reflect on 50 years of index investing and the profound impact it has had on financial markets, investor behavior, and the cost of investing. The episode features a panel moderated by Ben Felix at the New York Stock Exchange—hosted by Vanguard and S&P Dow Jones Indices—bringing together leading voices in the indexing world to explore how passive investing evolved and what it means for the future of capital markets. Ben is joined on the panel by Tim Edwards (S&P Dow Jones Indices), Jim Rowley (Vanguard), and Shelly Antoniewicz (Investment Company Institute) to discuss the mechanics of indexing, the myths surrounding passive investing, and the evidence on how index funds affect markets. They unpack questions about market concentration, price discovery, and whether indexing is changing the structure of capital markets. Key Points From This Episode: (0:00:04) Introduction to the Rational Reminder podcast and the hosts from PWL Capital. (0:00:24) Celebrating the 400th episode and reflecting on nearly eight years of podcasting. (0:01:09) Dan Bortolotti discusses the early days of podcasting and the transition from the Couch Potat...
---------------------------------------------------
+Error fetching Rational Reminder (Canadian Retail & Evidence-Based Investing): name 'BeautifulSoup' is not defined
 
-SHOW: The Compound & Friends (US/Global Retail Sentiment)
-LATEST EPISODE: A Sit-Down with Rick Wurster, CEO of Charles Schwab
-SHOW NOTES (SENTIMENT FUEL):
-On episode 233 of The Compound and Friends, ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠Michael Batnick⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ and ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠Downtown Josh Brown⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ are joined by Charles Schwab CEO Rick Wurster to discuss: the future of finance, AI's impact, being the $12 Trillion king of brokerages, and much more! This episode is sponsored by Public and ClearBridge Investments. Find out more at https://public.com/Compound A healthy economic backdrop should continue to support broadening equity leadership going forward. Learn more at https://www.clearbridge.com/ Sign up for The Compound Newsletter and never miss out: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠thecompoundnews.com/subscribe⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ Instagram: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠instagram.com/thecompoundnews⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ Twitter: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠twitter.com/thecompoundnews⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ LinkedIn: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠linkedin.com/company/the-compound-media/⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ TikTok: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠tiktok.com/@thecompoundnews⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ Public Disclosure: Paid endorsement. Brokerage services provided by Open to the Public Investing Inc, member FINRA & SIPC. Investing involves risk. Not investment advi...
---------------------------------------------------
+Error fetching The Compound & Friends (US/Global Retail Sentiment): name 'BeautifulSoup' is not defined
 
-Error fetching All-In Podcast (Tech/Macro/VC Disruption): 404 Client Error: Not Found for url: https://anchor.fm/s/2b0af938/podcast/rss
+Error fetching All-In Podcast (Tech/Macro/VC Disruption): name 'BeautifulSoup' is not defined
 
