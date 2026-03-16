@@ -1,11 +1,9 @@
-OCEANFRONT RAW INTELLIGENCE - 2026-03-16
+OCEANFRONT DEEP INTELLIGENCE - 2026-03-16
 ==================================================
 
 ### NORTH AMERICA (TSX & S&P 500) ###
 TITLE: Canada, U.S. stock markets rise amid softer increases in the price of oil
-SOURCE: BNN Bloomberg
-CONTENT:
-TORONTO — After two days of volatile swings, stock markets gained ground on Wednesday as the rise in oil prices eased.
+CONTENT: TORONTO — After two days of volatile swings, stock markets gained ground on Wednesday as the rise in oil prices eased.
 “Today has been certainly much calmer than Monday and Tuesday were, so that’s coming as some relief,” said Kevin Burkett, portfolio manager at Victoria-based Burkett Asset Management.
 “I think that’s not a reflection of stability as much as differences in opinions on whether we are entering a protracted Middle East conflict or something shorter term.”
 Uncertainty about the U.S.-Iran conflict has sent prices in financial markets careening up and down this week, with most taking their cues from what the price of oil is doing.
@@ -17,16 +15,11 @@ In New York, the Dow Jones industrial average was up 238.14 points at 48,739.41.
 The U.S. stock market has a history of shaking off military conflicts in the Middle East relatively quickly, though that comes with the caveat that oil prices don’t jump too high.
 Big tech stocks, meanwhile, were the strongest forces lifting the market. Amazon rose 3.9 per cent, and Nvidia added 1.7 per cent. Because they’re among the biggest stocks in the U.S. market in terms of total value, their movements carry more weight on the S&P 500.
 Stocks also got a boost from signs of strength for the U.S. economy.
-One report said growth for U.S. businesses in the real estate, finance and other services industries accelerated last month at the fastest pace since the summer of 2022. Encouragingly for inflation, it also said prices for such businesses are increasing at a slower rate, at least before the war with Iran began.
-A second report suggested U.S. employers outside of the government picked up their hiring last month. That could be a hopeful signal for the more comprehensive report coming Friday from the U.S. government about the overall job market.
-In the Canadian stock market, much of the gains were coming from the technology sector. That part of the market was led by Shopif...
---------------------------------------------------
+One report said growth for U.S. businesses in the real estate, finance and other services industries accelerated last month at the fastest pace since the summer of 2022. Encourag...
 
-### INTERNATIONAL & EMERGING (XEF/XEC) ###
+### INTERNATIONAL & EMERGING ###
 TITLE: Higher Emerging Market Potential or Balanced Global Growth? SCHE vs. VXUS
-SOURCE: The Motley Fool
-CONTENT:
-Vanguard Total International Stock ETF (NASDAQ:VXUS) offers broader global diversification and a lower expense ratio, while Schwab Emerging Markets Equity ETF (NYSEMKT:SCHE) focuses on emerging markets with a tech-heavy tilt and slightly higher costs.
+CONTENT: Vanguard Total International Stock ETF (NASDAQ:VXUS) offers broader global diversification and a lower expense ratio, while Schwab Emerging Markets Equity ETF (NYSEMKT:SCHE) focuses on emerging markets with a tech-heavy tilt and slightly higher costs.
 Both VXUS and SCHE aim to give investors exposure to stocks outside the United States, but they go about it in different ways. VXUS spans both developed and emerging non-U.S. markets with more than 8,600 holdings, while SCHE zeroes in on emerging markets and carries a much more concentrated portfolio. This comparison highlights key differences in cost, performance, sector exposure, and risk.
 Snapshot (cost & size)
 | Metric | VXUS | SCHE |
@@ -46,32 +39,11 @@ Performance & risk comparison
 | Growth of $1,000 over 5 years | $1,329 | $1,074 |
 VXUS has weathered market downturns with a smaller five-year max drawdown and delivered stronger five-year growth of $1,000 invested, reflecting its broader diversification and exposure to developed markets. SCHE’s deeper drawdown and lower five-year growth highlight the higher volatility and risk that often come with an emerging markets focus.
 What's inside
-SCHE tracks the FTSE Emerging Index, concentrating on markets like China, Taiwan, and India with 2,163 holdings as of its 16.1-year track record. Technology dominates at 25%, followed by financial services and consumer cyclicals. The top three holdings—Taiwan Semiconductor Manufacturing (2330.TW) 14.75%, Tencent Holdings Ltd (0700.HK) 3.85%, and Alibaba Group Holding Ltd (9988.HK) 3.11%—make up over 21% of assets, which increases concentration risk compared to more evenly spread funds.
-VXUS, by contrast, is far broader, holding more than 8,600 stocks across both developed and emerging economies. Its largest sector weights go to financial services, technology, a...
---------------------------------------------------
-
-TITLE: The S&P 500 Trails the Global Stock Market by Its Widest Margin Since 1995 as President Trump's Policies Rattle Investors
-SOURCE: The Motley Fool
-CONTENT:
-The S&P 500 (^GSPC +1.05%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
-The S&P 500 has not lagged the MSCI ACWI ex US Index by such a wide margin at this point in any year since 1995, according to Kevin Gordon, head of macro research and strategy at Charles Schwab.
-In fact, the global stock market has consistently outperformed the U.S. stock market during President Trump's second term due to concerns that his trade policies will hurt the U.S. economy (although that is now in question due to the Supreme Court overturning most of the tariffs). And some analysts expect that outperformance to continue in future years, especially in emerging markets. Here's what investors should know.
-The global stock market has crushed the S&P 500 under President Trump
-Global stocks have outperformed of late partly because they have cheaper valuations. For instance, the MSCI ACWI ex U.S. Index's forward price-to-earnings multiple is about 32% below that of the S&P 500. While U.S. stocks have regularly traded at a premium to international stocks over the last two decades, the current premium is nearly twice the historical average, according to JPMorgan Chase.
-Global stocks have also outperformed due to the devaluation of the U.S. dollar, which has turbocharged returns in international stocks when funds are converted back to U.S. currency. The U.S. Dollar Index has dropped 10% under President Trump because sweeping tariffs, rising federal debt, and regular attacks on the Federal Reserve threaten to hurt the U.S. economy. And a weak economy typically leads to a weak currency by pushing investors to move their money to other markets.
-Since President Trump returned to office in January 2025, the MSCI ACWI ex U.S. Index has advanced 40%, while the S&P 500 has advanced 15%. That means international stocks have outperformed U.S. stocks by an astonishing 25 percentage points during his second term. That is unprecedented in recent history.
-Emerging market stocks are forecast to crush the S&P 500 in the next decade
-Goldman Sachs analysts led by Peter Oppenheimer estimate the S&P 500 will compound at 6.5% annually during the next decade, but they anticipate much stronger returns in other stock markets (as measured in U.S. dollars):
-- Europe: 7.5% annually
-- Japan: 12% annually
-- Asia (excluding Japan): 12.6% annually...
---------------------------------------------------
+SCHE tracks the FTSE Emerging Index, concentrating on markets like China, Taiwan, and India with 2,163 holdings as of its 16.1-year track record. Technology dominates at...
 
 ### COMPETITOR & AI PULSE ###
 TITLE: The Market Is Misreading AI's Impact on Wealth Management
-SOURCE: Wealth Management
-CONTENT:
-The Market Is Misreading AI’s Impact on Wealth Management
+CONTENT: The Market Is Misreading AI’s Impact on Wealth Management
 AI won’t replace wealth advisors. It will expose the firms built to evolve, and those that are not.
 March 4, 2026
 The announcement of a new artificial intelligence tax tool promising personalized strategies “within minutes” sent wealth management stocks tumbling recently as fears spread that AI could wipe out large parts of the industry, compress fees and replace wealth advisors.
@@ -79,32 +51,28 @@ Those fears are overblown and reflect a fundamental misunderstanding of where va
 Many large wealth institutions still operate on technology architecture built decades ago, where client data, planning tools and operational systems exist in separate environments. New capabilities are often added on top of those rather than integrated at the core, making it harder (registration required) to move quickly and apply new wealth-building intelligence consistently across the client experience
 In wealth management, personal relationships drive value and remain central to how advice is delivered and received. Multiple surveys show that investors consistently prefer human guidance, and the recent retreat from standalone robo advisors by major financial institutions, underscores the limits of automation in financial advice.
 Demand for holistic advice is only going to accelerate as trillions of dollars change hands over the next decade. The Great Wealth Transfer will increase the need for guidance around taxes, estate planning and complex financial decisions, reinforcing the role of advisors rather than diminishing it.
-Advisors themselves want the time to provide that level of guidance. Today, however, less than 20% of an advisor’s time is spent in actual client consultations, with the majority consumed by operational and back office tasks. This leaves significant room for technology to improve how advice is delivered; most independent advisors are ready to leverage AI holistically to achieve those efficiency and effectiveness gains.
-The real disruption will come from how quickly and effectively firms implement AI, not from AI itself. Legacy institutions face structural challenges in harnessing the technology because their fragmented systems limit how inform...
+Advisors themselves want the time to provide that level of guidance. Today, however, less than 20% of an advisor’s time is spent in actual client consu...
+
+TITLE: AI Is Redefining Wealth Management
+CONTENT: Consulting firm McKinsey has predicted a transformative decade for wealth management in the United States, arguing that wealth management for high-net-worth individuals will increasingly look more like “life management” as offerings evolve through increased use of artificial intelligence.
+What has traditionally been the domain of ultra-high-net-worth investors will become more readily available for clients with lower net worths, McKinsey said in a new report. Access to improved technology, including agentic AI and greater data integration, will allow wealth managers to implement more bespoke services to a broader set of clients. These services include financial planning, family governance, tax and estate structuring, trust administration, customized insurance, balance sheet optimization, philanthropy, medical concierge, and lifestyle services, per the report.
+“When we survey individual investors, whether they have $100,000 or $100 million in investable assets, there was a very clear trend: They want a more holistic set of services, capabilities, and support,” said Vlad Golyk, head of McKinsey’s wealth management practice. However, the current human-driven system involves a lot of work and a lot of expense, he said, adding that family offices are essentially a very expensive human middleware between disconnected financial systems and data.
+“AI and data platforms will make everything cheaper,” he said. “This might sound futuristic, but if AI can do 80 percent of the work and have it overseen by people, then the unit economics of these types of services will go down. That means wealth management firms can start offering those services to more people because of the economics.”
+However, such cost savings will require an upfront investment, including deep integration of technology through partnerships and acquisitions, as well as a dedicated focus on how best to govern new systems.
+This could pose an existential risk to the wealth management industry, said Golyk, warning ...
+
+### SOCIAL & PODCAST TRANSCRIPTS ###
+SHOW: All-In Podcast (Tech/Global Macro)
+EPISODE: Chamath Explains Why AI is So Unpopular: Terrible Communication from Industry Leaders
+DATA:
+Follow the besties: Follow on X: Follow on Instagram: Follow on TikTok: Follow on LinkedIn: Intro Music Credit: Intro Video Credit:...
 --------------------------------------------------
 
-### SOCIAL & PODCAST SENTIMENT ###
-SHOW: The Loonie Hour (Vancouver Real Estate & Canadian Macro)
-LATEST EPISODE: Oil Prices Are Surging — Is Inflation Next?
-SENTIMENT FUEL:
-Oil tops $100, prompting fears of an energy crisis. Fertilizer prices have jumped nearly 80%. How bad will the next wave of inflation be?OSFI flags appraisal issues. Private credit crunch deepens. Join Us For The Loonie Hour Investor Series - With Ben Rabidoux, Live In Calgary on March 23rd, and Vancouver on March 25th! Get Your Tickets Here! Calgary - https://www.eventbrite.com/e/loonie-hour-investor-series-with-ben-rabidoux-calgary-tickets-1984582823649?aff=oddtdtcreator Vancouver - https://www.eventbrite.com/e/loonie-hour-investor-series-with-ben-rabidoux-vancouver-tickets-1984583594956?aff=oddtdtcreator Start an investment portfolio that&#39;s built to perform with Neighbourhood Holdings! For Investors and Advisors: https://www.neighbourhood.com/looniehour For Mortgage Brokers: https://www.neighbourhood.com/looniehour-brokers ✉️ Media &amp; Real Estate Inquries: steve@stevesaretsky.com Stay up to date with our information - 📫 My Real Estate Substack: https://stevesaretsky.substack.com 📫 The Loonie Hour Substack: https://looniehour.substack.com/about 📊➡️ Loonie Hour Socials: https://linktr.ee/looniehour 🎙️ Listen to the Podcast on Your Preferred Platform: https://linktr.ee/looni...
+SHOW: Rational Reminder (Canada Investing)
+EPISODE: Episode 400: The Evolution of Index Fund Investing
+DATA:
+<p dir="ltr">In this special 400th episode, the Rational Reminder hosts reflect on 50 years of index investing and the profound impact it has had on financial markets, investor behavior, and the cost of investing. The episode features a panel moderated by Ben Felix at the New York Stock Exchange—hosted by Vanguard and S&P Dow Jones Indices—bringing together leading voices in the indexing world to explore how passive investing evolved and what it means for the future of capital markets. Ben is joined on the panel by Tim Edwards (S&P Dow Jones Indices), Jim Rowley (Vanguard), and Shelly Antoniewicz (Investment Company Institute) to discuss the mechanics of indexing, the myths surrounding passive investing, and the evidence on how index funds affect markets. They unpack questions about market concentration, price discovery, and whether indexing is changing the structure of capital markets.</p> <p><strong><br /> <br /></strong></p> <p dir="ltr"><strong>Key Points From This Episode:</strong></p> <p dir="ltr">(0:00:04) Introduction to the Rational Reminder podcast and the hosts from PWL Capital.</p> <p dir="ltr">(0:00:24) Celebrating the 400th episode and reflecting on nearly eight years of podcasting.</p> <p dir="ltr">(0:01:09) Dan Bortolotti discusses the early days of podcasting and the transition from the Couch Potato podcast.</p> <p dir="ltr">(0:02:11) The rise of podcasts and YouTube as major sources of financial education for investors.</p> <p dir="ltr">(0:02:49) How Rational Reminder grew after Dan ended his previous podcast and the demand for Canadian investing content.</p> <p dir="ltr">(0:03:47) The podcast reaches a record audience with over 384,000 views and downloads in January 2026.</p> <p dir="ltr">(0:04:19) Institutional investors—foundations, endowments, and unions—show increasing interest in PWL's low-cost index approach.</p> <p dir="ltr">(0:06:20) Why indexing can still be a difficult sell for institutional investment committees.</p> <p dir="ltr">(0:08:25) Peer effects in institutional investing: committees often hesitate to adopt strategies that seem unconventional.</p> <p dir="ltr">(0:09:11) 2026 marks 50 years since Vanguard launched the first retail index fund in 1976.</p> <p dir="ltr">(0:10:08) Ben moderates a panel at the New York Stock Exchange on the future of index investing.</p> <p dir="ltr">(0:11:55) Overview of the panel participants from Vanguard, S&P Dow Jones Indices, and the Investment Company Institute.</p> <p dir="ltr">(0:13:07) Discussion of research papers presented at the event examining index investing's market impact.</p> <p dir="ltr">(0:14:32) Historical context: the S&P 500 is currently as concentrated as it was in the mid-1960s.</p> <p dir="ltr">(0:15:36) The largest companies in 1965—AT&T, Kodak, GM, IBM—eventually faded from dominance.</p> <p dir="ltr">(0:17:43) A hidden advantage of cap-weighted indexing: investors automatically own future winners.</p> <p dir="ltr">(0:20:59) Debate about whether today's tech-heavy market concentration differs from past cycles.</p> <p dir="ltr">(0:23:30) The explosion of index funds and ETFs has created thousands of ways to implement passive strategies.</p> <p dir="ltr">(0:26:42) Technical improvements in ETF implementation, including lower tracking error and better hedging.</p> <p dir="ltr">(0:29:02) The "Vanguard Effect": index investing has driven massive reductions in investment fees.</p> <p dir="ltr">(0:29:38) Index funds account for about 23% of total U.S. market capitalization, not the commonly cited 50%.</p> <p dir="ltr">(0:32:48) Evidence suggesting index funds have not increased large-cap concentration in markets.</p> <p dir="ltr">(0:34:25) Passive funds represent only about 1–2% of daily trading activity.</p> <p dir="ltr">(0:36:16) Dispersion in stock returns remains high, meaning opportunities for active management still exist.</p> <p dir="ltr">(0:38:12) Panel begins: defining passive investing and why the term is more complex than it seems....
 --------------------------------------------------
 
-SHOW: Rational Reminder (Canadian Retail & Evidence-Based Investing)
-LATEST EPISODE: Episode 400: The Evolution of Index Fund Investing
-SENTIMENT FUEL:
-In this special 400th episode, the Rational Reminder hosts reflect on 50 years of index investing and the profound impact it has had on financial markets, investor behavior, and the cost of investing. The episode features a panel moderated by Ben Felix at the New York Stock Exchange—hosted by Vanguard and S&P Dow Jones Indices—bringing together leading voices in the indexing world to explore how passive investing evolved and what it means for the future of capital markets. Ben is joined on the panel by Tim Edwards (S&P Dow Jones Indices), Jim Rowley (Vanguard), and Shelly Antoniewicz (Investment Company Institute) to discuss the mechanics of indexing, the myths surrounding passive investing, and the evidence on how index funds affect markets. They unpack questions about market concentration, price discovery, and whether indexing is changing the structure of capital markets. Key Points From This Episode: (0:00:04) Introduction to the Rational Reminder podcast and the hosts from PWL Capital. (0:00:24) Celebrating the 400th episode and reflecting on nearly eight years of podcasting. (0:01:09) Dan Bortolotti discusses the early days of podcasting and the transition from the Couch Potat...
---------------------------------------------------
-
-SHOW: The Compound & Friends (US/Global Retail Sentiment)
-LATEST EPISODE: A Sit-Down with Rick Wurster, CEO of Charles Schwab
-SENTIMENT FUEL:
-On episode 233 of The Compound and Friends, ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠Michael Batnick⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ and ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠Downtown Josh Brown⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ are joined by Charles Schwab CEO Rick Wurster to discuss: the future of finance, AI's impact, being the $12 Trillion king of brokerages, and much more! This episode is sponsored by Public and ClearBridge Investments. Find out more at https://public.com/Compound A healthy economic backdrop should continue to support broadening equity leadership going forward. Learn more at https://www.clearbridge.com/ Sign up for The Compound Newsletter and never miss out: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠thecompoundnews.com/subscribe⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ Instagram: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠instagram.com/thecompoundnews⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ Twitter: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠twitter.com/thecompoundnews⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ LinkedIn: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠linkedin.com/company/the-compound-media/⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ TikTok: ⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠tiktok.com/@thecompoundnews⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠⁠ Public Disclosure: Paid endorsement. Brokerage services provided by Open to the Public Investing Inc, member FINRA & SIPC. Investing involves risk. Not investment advi...
---------------------------------------------------
-
-SHOW: All-In Podcast (Tech/Macro/VC Disruption)
-LATEST EPISODE: Chamath Explains Why AI is So Unpopular: Terrible Communication from Industry Leaders
-SENTIMENT FUEL:
-Follow the besties: https://x.com/chamath https://x.com/Jason https://x.com/DavidSacks https://x.com/friedberg Follow on X: https://x.com/theallinpod Follow on Instagram: https://www.instagram.com/theallinpod Follow on TikTok: https://www.tiktok.com/@theallinpod Follow on LinkedIn: https://www.linkedin.com/company/allinpod Intro Music Credit: https://rb.gy/tppkzl https://x.com/yung_spielburg Intro Video Credit: https://x.com/TheZachEffect #allin #tech #news...
---------------------------------------------------
+Error fetching The Compound & Friends (US Retail Sentiment): 'NoneType' object has no attribute 'get'
 
