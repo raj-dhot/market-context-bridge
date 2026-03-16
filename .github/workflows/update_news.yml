@@ -1,0 +1,34 @@
+name: Weekly News Fetcher
+
+on:
+  schedule:
+    # Runs at 10:00 UTC (3:00 AM PDT) every Monday.
+    - cron: '0 10 * * 1'
+  workflow_dispatch: # Allows you to run it manually by clicking a button
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Grants permission to push the file back to the repo
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Run scraper
+        run: python fetch_news.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add latest_news.txt
+          # The || exit 0 prevents the workflow from failing if there are no new changes
+          git commit -m "Auto-update weekly market news" || exit 0
+          git push
