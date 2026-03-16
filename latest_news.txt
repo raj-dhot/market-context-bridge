@@ -1,30 +1,60 @@
-MARKET CONTEXT FOR WEEK OF 2026-03-16
+RAW INTELLIGENCE DATA - 2026-03-16
+==================================================
 
---- S&P 500 & US Markets ---
-- Stock market today: Dow, S&P 500, Nasdaq rise as Wall Street crosses fingers for Hormuz reopening - Yahoo Finance (Mon, 16 Mar 2026 16:10:52 GMT)
-- Dow bounces 500 points to start the week as oil prices fall back to $95 a barrel: Live updates - CNBC (Mon, 16 Mar 2026 15:45:00 GMT)
-- Buy 3 S&P 500 Stocks Backed by Double-Digit Returns in the Past Month - The Globe and Mail (Mon, 16 Mar 2026 14:21:25 GMT)
-- Stock Market Today: Dow up 400 points as stocks rebound and oil prices retreat; Nvidia in focus - MarketWatch (Mon, 16 Mar 2026 15:13:28 GMT)
-- Stock Market Today: Dow, S&P 500, Nasdaq Rise; Oil Prices; Nvidia, Meta, Micron, Sandisk, Tesla, More Movers - Barron's (Mon, 16 Mar 2026 16:07:59 GMT)
+### TSX & S&P 500 (NORTH AMERICA) ###
+TITLE: Best Retail Stocks of 2026: Are They Right for Your Portfolio? - The Motley Fool
+LINK: https://news.google.com/rss/articles/CBMinAFBVV95cUxPdXZRbktCUnNuVGo0LVY0VS04czlnc1Z4SDRncDRoYS1GT0VyU1doeFdsQnF2clpRS0dpSXVDMXh5aTRwQ1lUOVp2d2JHTUhfeUYxOUtKZDN3eC1OdHVUN1AwMU5GLUxpbGVtdW1KeXFnYlo1TWFhUXJvYXlsT0JhU1p3Z2hweTdlOXpFOHNYRjBnSjNzY0JRSU54NTU?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
 
---- TSX & Canadian Markets ---
-- Canada’s top exchange pushes to end quarterly reporting for all firms - BNN Bloomberg (Thu, 12 Mar 2026 18:59:58 GMT)
-- TSX, U.S. stock markets reverse course to erase losses from earlier in the day - Toronto Star (Mon, 09 Mar 2026 21:41:52 GMT)
-- Galaxy Digital to delist from TSX and trade only on the Nasdaq - The Globe and Mail (Tue, 03 Mar 2026 08:00:00 GMT)
-- Technology stocks weigh on Canada, U.S. markets amid risk-off rotation - Yahoo! Finance Canada (Thu, 12 Feb 2026 08:00:00 GMT)
-- TSX falls more than 2% as precious metal prices slide - Reuters (Tue, 03 Mar 2026 08:00:00 GMT)
+TITLE: Historical Average Stock Market Returns for S&P 500 (5-year to 150-year averages) - Trade That Swing
+LINK: https://news.google.com/rss/articles/CBMirgFBVV95cUxPYUdhdnpUUmlfZVI3Mm9vS2w4Q0dZSUxyWmp1QlJyeUJWRHctU0djRVFwcnlvbWdKREJwQi13clFQM0FsS21QbzBla1hCbnRvU3NPcVJacnhESkF2NzZzckwwZ290eEJPcTlENV91SG5MQ25DUkFTQzlHUzVpR1R3RG5vaFRzT0ZaN2FGdHVtdVgtTkVWbThRa3MzT0pPdDhFLXdLV2hBZzFMMXFSS3c?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
 
---- XEF & XEC (International & Emerging) ---
-- $104 Billion Is Flowing to International Stocks. Should You Join in? - The Globe and Mail (Sun, 01 Mar 2026 08:00:00 GMT)
-- 8 Best Emerging-Market ETFs to Buy for 2026 | Investing | U.S. News - US News Money (Fri, 20 Feb 2026 08:00:00 GMT)
-- International Value Has Outshone US Growth - MSCI (Thu, 11 Dec 2025 08:00:00 GMT)
-- Market Outlook: Emerging markets seen benefiting from AI spending surge - BNN Bloomberg (Mon, 26 Jan 2026 08:00:00 GMT)
-- Emerging Markets Stocks Can Balance Volatility from the AI Trade - Goldman Sachs (Wed, 17 Dec 2025 08:00:00 GMT)
+TITLE: S&P/TSX composite tumbles 2%, U.S. markets also down - Investment Executive
+LINK: https://news.google.com/rss/articles/CBMilAFBVV95cUxQYmtDSjNLaWdWZjI1d09vUFFiaTRYaUdiRTQybFNmZHdkQXN6azJOa1prVmwzbFhJNzYtUXNoR0FjQTRoemlFY2VEMXpxUGM2WFJ0c1VTNmljVXplaXBabEl4WDBORjN3ZEhSZXpWQm1pbW1DRGZKUXdtVUZGUUZKVmJaRlRyakcwZF9yMFFrYlA2SDhn?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
 
---- Competitor & AI Pulse (Wealthsimple, Questrade, AI) ---
-- Constellation Software 'well-positioned' against AI disruption, CEO says - Yahoo! Finance Canada (Mon, 09 Mar 2026 19:36:34 GMT)
-- Why investors won’t know what to make of AI for a while - The Economist (Thu, 12 Mar 2026 15:11:08 GMT)
-- Altruist CEO discusses AI disruption fears in software and financial services - CNBC (Wed, 11 Mar 2026 16:05:00 GMT)
-- Constellation Software 'well-positioned' against AI disruption, CEO says - Financial Post (Mon, 09 Mar 2026 19:38:29 GMT)
-- The US market’s take on AI disruption - LSEG (Thu, 26 Feb 2026 08:00:00 GMT)
+### XEF & XEC (INTERNATIONAL & EMERGING) ###
+TITLE: The Best Emerging-Market Equity ETFs to Buy - Morningstar Canada
+LINK: https://news.google.com/rss/articles/CBMihAFBVV95cUxOVU9Rc2xkdGZTR0QzX3VTWGZndjFhX0hjcmZySU5aNEo2dUhYXzgtWlNLYWtCR0V1bHBsWGp5cGZ4OWJYRHVJUVhaY3dBM09jMkJtQ3ZWVzRXWEYxbF9QMGhxUU10RktfbWdiQ3VTd3dWeUdQYmJJQURsZHVqeUJaTGZvaEM?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
+
+TITLE: 5 Best International Stocks to Buy in 2026 - The Motley Fool
+LINK: https://news.google.com/rss/articles/CBMiiAFBVV95cUxPRnIzYnBRbFZHeWU3NjAxd2dodkFrc2dnVDF5OTlaTzZQUVlZNFVTNjVYbS0tVjRkc2xjLXNDNjU0MW5ReVhSWHhoaGJCNUhoSi1KNkotb3I1akZBaDZXbzh1c1dTaW82V0JPZ1owRVJvd3haaDJ6Q3RlcC02aXdkTURtQmNFajNW?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
+
+TITLE: 3 International Stock Market ETFs to Buy With $2,000 and Hold Forever - The Globe and Mail
+LINK: https://news.google.com/rss/articles/CBMi5gFBVV95cUxQSHJ2RDZPUzZlZndYSnFlejc4SXBrVkFKd0FGcXlhVGFsbmdNUDF1ODFPUHpSLWJmY2hlYXVHcW1nYk5TU0lhbTRxaHRNOVdFekZIM2dJS3ZFR1I1ZjQ3QlhScU1QSXNFSHp3VGR1bFhLbnFpTXFSRlB3UDlrWUU4eGFPNWxVNm5QUUd2MzFmbEl3RjZXR1h1algwb3VGR2tELUtOUExCTXRTLWh2MlNEUUlMVHFjRGstRHItdDhkSkVGeVFSdXV3WFFUSDV0c1pxZmpkVkQwcklfbmIzT1NzaEEyN1lLQQ?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
+
+### COMPETITOR & AI PULSE ###
+TITLE: Short Selling Explained: Risks, Rewards, and Rules - Wealthsimple
+LINK: https://news.google.com/rss/articles/CBMib0FVX3lxTE9yUGNDRnl1UVljMVZocGk3VmY3QTV2WFpJRUx0NmVyZndfS1JGRjVmSElCQ1hUdzBHd3g5WmFzeUVPZUZSb1hOSkhoeXpRcGpWZUFiZDkxUW4xZWtvWlRSUHZhMnFNXzBLdnBUZnhlOA?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
+
+TITLE: French health insurer Alan raises $158-million, including from Shopify and Wealthsimple CEOs - The Globe and Mail
+LINK: https://news.google.com/rss/articles/CBMiwwFBVV95cUxNRWxob0lrWFRpbHJZWmoxSFBvZVROemNRcWxXU01mWGNXSXNsc09oTGVvMTc2ZS16OHpod0ZEa2NnRlZLcVE2eVpOS1JBeWU1UHBtRlNPR0ZmNzdjcTRwRjlJbTVlNUZ5MGxiQnBWNkxidEE0M01VQzVvVDdFdjB1VW1sSEJTdW9mWXFZSVNlMzd6enRBNEk5UFVVa1ozcVZ3NFpMVVlUUjVfRnJlTE1CSGVBOXJ1Q1M1WXNsT19vcWhkWGc?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
+
+TITLE: Wealthsimple becomes first Canadian FinTech to join SWIFT network - BetaKit
+LINK: https://news.google.com/rss/articles/CBMijwFBVV95cUxQV1U1X2laVGkzOTlPRDB0T3BYdXRXdVZrczhQTGV5bkdRb3ZWNVczdkFwcGdmaHQyQ2prVGFMVXZzSFVNSGo2NU81Z0JtelA5UllRWW5uOXpTQ1ZxVnVkSG9uemxvbE9kTzVyME9VTmtydXpVVG5aeWJHUzE4dGYzZ2xVX2VyMUlhcTJocVF4RQ?oc=5
+CONTENT:
+No readable paragraph content found.
+----------------------------------------
 
