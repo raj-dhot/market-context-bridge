@@ -1,66 +1,61 @@
-RAW INTELLIGENCE DATA (SNIPPETS) - 2026-03-16
+OCEANFRONT RAW INTELLIGENCE - 2026-03-16
 ==================================================
 
 ### NORTH AMERICA (TSX & S&P 500) ###
-TITLE: S&P/TSX composite and U.S. stock markets up in late-morning trading - CityNews Halifax
-SUMMARY: S&P/TSX composite and U.S. stock markets up in late-morning trading | | CityNews Halifax
-----------------------------------------
-
-TITLE: S&P/TSX composite and U.S. stock markets up in late-morning trading - Toronto Star
-SUMMARY: S&P/TSX composite and U.S. stock markets up in late-morning trading | | Toronto Star
-----------------------------------------
-
-TITLE: Canada Stock Market Index (TSX) at 32681.49points - TradingView
-SUMMARY: Canada Stock Market Index (TSX) at 32681.49points | | TradingView
-----------------------------------------
-
-TITLE: The most oversold and overbought stocks on the TSX - The Globe and Mail
-SUMMARY: The most oversold and overbought stocks on the TSX | | The Globe and Mail
-----------------------------------------
-
-TITLE: S&P/TSX composite and U.S. stock markets up in late-morning trading - The Spec
-SUMMARY: S&P/TSX composite and U.S. stock markets up in late-morning trading | | The Spec
-----------------------------------------
+No readable, non-political articles successfully extracted today.
 
 ### INTERNATIONAL & EMERGING (XEF/XEC) ###
-TITLE: Global Innovation Lab to incubate eight climate finance solutions for emerging markets - ImpactAlpha
-SUMMARY: Global Innovation Lab to incubate eight climate finance solutions for emerging markets | | ImpactAlpha
-----------------------------------------
+TITLE: The S&P 500 Trails the Global Stock Market by Its Widest Margin Since 1995 as President Trump's Policies Rattle Investors
+SOURCE: The Motley Fool
+LINK: https://www.fool.com/investing/2026/02/23/sp-500-trails-global-stock-market-trumps-policies/
+CONTENT:
+The S&P 500 (^GSPC +0.98%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
+The S&P 500 has not lagged the MSCI ACWI ex US Index by such a wide margin at this point in any year since 1995, according to Kevin Gordon, head of macro research and strategy at Charles Schwab.
+In fact, the global stock market has consistently outperformed the U.S. stock market during President Trump's second term due to concerns that his trade policies will hurt the U.S. economy (although that is now in question due to the Supreme Court overturning most of the tariffs). And some analysts expect that outperformance to continue in future years, especially in emerging markets. Here's what investors should know.
+The global stock market has crushed the S&P 500 under President Trump
+Global stocks have outperformed of late partly because they have cheaper valuations. For instance, the MSCI ACWI ex U.S. Index's forward price-to-earnings multiple is about 32% below that of the S&P 500. While U.S. stocks have regularly traded at a premium to international stocks over the last two decades, the current premium is nearly twice the historical average, according to JPMorgan Chase.
+Global stocks have also outperformed due to the devaluation of the U.S. dollar, which has turbocharged returns in international stocks when funds are converted back to U.S. currency. The U.S. Dollar Index has dropped 10% under President Trump because sweeping tariffs, rising federal debt, and regular attacks on the Federal Reserve threaten to hurt the U.S. economy. And a weak economy typically leads to a weak currency by pushing investors to move their money to other markets.
+Since President Trump returned to office in January 2025, the MSCI ACWI ex U.S. Index has advanced 40%, while the S&P 500 has advanced 15%. That means international stocks have outperformed U.S. stocks by an astonishing 25 percentage points during his second term. That is unprecedented in recent history.
+Emerging market stocks are forecast to crush the S&P 500 in the next decade
+Goldman Sachs analysts led by Peter Oppenheimer estimate the S&P 500 will compound at 6.5% annually during the next decade, but they anticipate much stronger returns in other stock markets (as measured in U.S. dollars):
+- Europe: 7.5% annually
+- Japan: 12% annually
+- Asia (excluding Japan): 12.6% annually...
+--------------------------------------------------
 
-TITLE: How Ishares Msci Emerging Markets Etf (EEM) Affects Rotational Strategy Timing - Stock Traders Daily
-SUMMARY: How Ishares Msci Emerging Markets Etf (EEM) Affects Rotational Strategy Timing | | Stock Traders Daily
-----------------------------------------
-
-TITLE: ABN Amro expands M&G emerging markets mandate - Funds Europe
-SUMMARY: ABN Amro expands M&G emerging markets mandate | | Funds Europe
-----------------------------------------
-
-TITLE: Emerging Markets Tiptoe Higher As Hormuz And Oil Risks Linger - Finimize
-SUMMARY: Emerging Markets Tiptoe Higher As Hormuz And Oil Risks Linger | | Finimize
-----------------------------------------
-
-TITLE: Down but not out: Emerging markets could endure Middle East shocks, investors say - The Globe and Mail
-SUMMARY: Down but not out: Emerging markets could endure Middle East shocks, investors say | | The Globe and Mail
-----------------------------------------
+TITLE: Orbis brings Japan, EM and international equities funds to UK market
+SOURCE: Portfolio Adviser
+LINK: https://portfolio-adviser.com/orbis-brings-japan-em-and-international-equities-funds-to-uk-market/
+CONTENT:
+Orbis Investments is making three additional equities strategies available to UK investors.
+Orbis Japan Equity, Orbis Emerging Markets Equity and Orbis International Equity each offer a distinct objective and reference benchmark, the firm said.
+The main focus of all three continues to be identifying undervalued companies, which may result in the funds differing significantly from benchmarks or peers.
+The funds are available via Orbis’ refundable reserve fee, performance-linked structure, or through a fixed-fee share class.
+The Orbis SICAV Japan Equity fund is managed by Brett Moshal and Alex Bowles, unconstrained by benchmark weightings. The firm said it offers diversification benefits through low correlation to other developed market indices.
+The second additional offering, the Orbis SICAV Emerging Markets Equity fund, is managed by Stefan Magnusson and Stanley Lu. It is characterised by its ‘highly selective, research-driven approach’, the asset manager said.
+See also: Morningstar: Multi-asset funds still struggle to beat benchmarks
+Completing the trio, the Orbis SICAV International Equity fund is managed by Graeme Forster and provides global ex-US equity exposure at a time of high US concentration in global indices.
+Matthew Spencer, head of UK retail at Orbis, said: “We are hearing a consistent message from advisers, discretionary fund managers, wealth managers and family offices in the UK.
+“They are recognising the need for more diversified global exposure outside the US in the form of high-conviction building blocks that offer differentiated exposure and complement core allocations.
+“Our Japan and emerging markets funds provide just that, having delivered strong track records while bearing very little resemblance to their benchmarks.
+“Our international fund, while not a common category in the UK, directly addresses the challenge of a concentrated US market.
+“We believe this strategy offers a compelling option for clients seeking diversification away from the top-heavy US markets, and it has likewise achieved impressive returns despite the outperformance of the US equity market.”...
+--------------------------------------------------
 
 ### COMPETITOR & AI PULSE ###
-TITLE: Short Selling Explained: Risks, Rewards, and Rules - Wealthsimple
-SUMMARY: Short Selling Explained: Risks, Rewards, and Rules | | Wealthsimple
-----------------------------------------
-
-TITLE: French health insurer Alan raises $158-million, including from Shopify and Wealthsimple CEOs - The Globe and Mail
-SUMMARY: French health insurer Alan raises $158-million, including from Shopify and Wealthsimple CEOs | | The Globe and Mail
-----------------------------------------
-
-TITLE: Wealthsimple becomes first Canadian FinTech to join SWIFT network - BetaKit
-SUMMARY: Wealthsimple becomes first Canadian FinTech to join SWIFT network | | BetaKit
-----------------------------------------
-
-TITLE: Questrade Review 2026 - Million Dollar Journey
-SUMMARY: Questrade Review 2026 | | Million Dollar Journey
-----------------------------------------
-
-TITLE: Popular online banks in Canada - Wealthsimple
-SUMMARY: Popular online banks in Canada | | Wealthsimple
-----------------------------------------
+TITLE: The Market Is Misreading AI's Impact on Wealth Management
+SOURCE: Wealth Management
+LINK: https://www.wealthmanagement.com/artificial-intelligence/ai-wont-replace-wealth-advisors-but-will-expose-tech-gaps
+CONTENT:
+The Market Is Misreading AI’s Impact on Wealth Management
+AI won’t replace wealth advisors. It will expose the firms built to evolve, and those that are not.
+March 4, 2026
+The announcement of a new artificial intelligence tax tool promising personalized strategies “within minutes” sent wealth management stocks tumbling recently as fears spread that AI could wipe out large parts of the industry, compress fees and replace wealth advisors.
+Those fears are overblown and reflect a fundamental misunderstanding of where value in wealth management actually comes from. AI will not replace financial advisors. What it will do is expose a challenge legacy institutions have struggled with for decades: the inability to integrate new technology quickly enough to keep pace with how financial advice is evolving.
+Many large wealth institutions still operate on technology architecture built decades ago, where client data, planning tools and operational systems exist in separate environments. New capabilities are often added on top of those rather than integrated at the core, making it harder (registration required) to move quickly and apply new wealth-building intelligence consistently across the client experience
+In wealth management, personal relationships drive value and remain central to how advice is delivered and received. Multiple surveys show that investors consistently prefer human guidance, and the recent retreat from standalone robo advisors by major financial institutions, underscores the limits of automation in financial advice.
+Demand for holistic advice is only going to accelerate as trillions of dollars change hands over the next decade. The Great Wealth Transfer will increase the need for guidance around taxes, estate planning and complex financial decisions, reinforcing the role of advisors rather than diminishing it.
+Advisors themselves want the time to provide that level of guidance. Today, however, less than 20% of an advisor’s time is spent in actual client consultations, with the majority consumed by operational and back office tasks. This leaves significant room for technology to improve how advice is delivered; most independent advisors are ready to leverage AI holistically to achieve those efficiency and effectiveness gains.
+The real disruption will come from how quickly and effectively firms implement AI, not from AI itself. Legacy institutions face structural challenges in harnessing the technology because their fragmented systems limit how inform...
+--------------------------------------------------
 
