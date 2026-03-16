@@ -7,9 +7,8 @@ No readable, non-political articles successfully extracted today.
 ### INTERNATIONAL & EMERGING (XEF/XEC) ###
 TITLE: The S&P 500 Trails the Global Stock Market by Its Widest Margin Since 1995 as President Trump's Policies Rattle Investors
 SOURCE: The Motley Fool
-LINK: https://www.fool.com/investing/2026/02/23/sp-500-trails-global-stock-market-trumps-policies/
 CONTENT:
-The S&P 500 (^GSPC +0.98%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
+The S&P 500 (^GSPC +0.92%) is the benchmark for the U.S. stock market. It has advanced less than 1% year to date. The MSCI ACWI ex U.S. Index is a benchmark for the global stock market (excluding U.S. equities). It has returned 10% year to date.
 The S&P 500 has not lagged the MSCI ACWI ex US Index by such a wide margin at this point in any year since 1995, according to Kevin Gordon, head of macro research and strategy at Charles Schwab.
 In fact, the global stock market has consistently outperformed the U.S. stock market during President Trump's second term due to concerns that his trade policies will hurt the U.S. economy (although that is now in question due to the Supreme Court overturning most of the tariffs). And some analysts expect that outperformance to continue in future years, especially in emerging markets. Here's what investors should know.
 The global stock market has crushed the S&P 500 under President Trump
@@ -25,7 +24,6 @@ Goldman Sachs analysts led by Peter Oppenheimer estimate the S&P 500 will compou
 
 TITLE: Orbis brings Japan, EM and international equities funds to UK market
 SOURCE: Portfolio Adviser
-LINK: https://portfolio-adviser.com/orbis-brings-japan-em-and-international-equities-funds-to-uk-market/
 CONTENT:
 Orbis Investments is making three additional equities strategies available to UK investors.
 Orbis Japan Equity, Orbis Emerging Markets Equity and Orbis International Equity each offer a distinct objective and reference benchmark, the firm said.
@@ -45,7 +43,6 @@ Matthew Spencer, head of UK retail at Orbis, said: “We are hearing a consisten
 ### COMPETITOR & AI PULSE ###
 TITLE: The Market Is Misreading AI's Impact on Wealth Management
 SOURCE: Wealth Management
-LINK: https://www.wealthmanagement.com/artificial-intelligence/ai-wont-replace-wealth-advisors-but-will-expose-tech-gaps
 CONTENT:
 The Market Is Misreading AI’s Impact on Wealth Management
 AI won’t replace wealth advisors. It will expose the firms built to evolve, and those that are not.
@@ -58,4 +55,29 @@ Demand for holistic advice is only going to accelerate as trillions of dollars c
 Advisors themselves want the time to provide that level of guidance. Today, however, less than 20% of an advisor’s time is spent in actual client consultations, with the majority consumed by operational and back office tasks. This leaves significant room for technology to improve how advice is delivered; most independent advisors are ready to leverage AI holistically to achieve those efficiency and effectiveness gains.
 The real disruption will come from how quickly and effectively firms implement AI, not from AI itself. Legacy institutions face structural challenges in harnessing the technology because their fragmented systems limit how inform...
 --------------------------------------------------
+
+TITLE: AI Is Redefining Wealth Management
+SOURCE: Institutional Investor
+CONTENT:
+Consulting firm McKinsey has predicted a transformative decade for wealth management in the United States, arguing that wealth management for high-net-worth individuals will increasingly look more like “life management” as offerings evolve through increased use of artificial intelligence.
+What has traditionally been the domain of ultra-high-net-worth investors will become more readily available for clients with lower net worths, McKinsey said in a new report. Access to improved technology, including agentic AI and greater data integration, will allow wealth managers to implement more bespoke services to a broader set of clients. These services include financial planning, family governance, tax and estate structuring, trust administration, customized insurance, balance sheet optimization, philanthropy, medical concierge, and lifestyle services, per the report.
+“When we survey individual investors, whether they have $100,000 or $100 million in investable assets, there was a very clear trend: They want a more holistic set of services, capabilities, and support,” said Vlad Golyk, head of McKinsey’s wealth management practice. However, the current human-driven system involves a lot of work and a lot of expense, he said, adding that family offices are essentially a very expensive human middleware between disconnected financial systems and data.
+“AI and data platforms will make everything cheaper,” he said. “This might sound futuristic, but if AI can do 80 percent of the work and have it overseen by people, then the unit economics of these types of services will go down. That means wealth management firms can start offering those services to more people because of the economics.”
+However, such cost savings will require an upfront investment, including deep integration of technology through partnerships and acquisitions, as well as a dedicated focus on how best to govern new systems.
+This could pose an existential risk to the wealth management industry, said Golyk, warning that a new set of technology companies could take market share from traditional wealth managers in an AI-driven marketplace. However, he believes existing players will adapt to fill the space.
+“There is absolutely space for an AI-first business model, similar to what we had with robo advisors,” he said. “But people still want the human touch. Finance is just as much as much about numbers as it is about emotions; the competitive edge would belong to those who can combine this autonomous intellige...
+--------------------------------------------------
+
+### SOCIAL & PODCAST SENTIMENT ###
+Error fetching The Loonie Hour (Vancouver Real Estate & Canadian Macro): HTTP Error 404: Not Found
+
+SHOW: Rational Reminder (Canadian Retail & Evidence-Based Investing)
+LATEST EPISODE: Episode 400: The Evolution of Index Fund Investing
+SHOW NOTES (SENTIMENT FUEL):
+In this special 400th episode, the Rational Reminder hosts reflect on 50 years of index investing and the profound impact it has had on financial markets, investor behavior, and the cost of investing. The episode features a panel moderated by Ben Felix at the New York Stock Exchange—hosted by Vanguard and S&P Dow Jones Indices—bringing together leading voices in the indexing world to explore how passive investing evolved and what it means for the future of capital markets. Ben is joined on the panel by Tim Edwards (S&P Dow Jones Indices), Jim Rowley (Vanguard), and Shelly Antoniewicz (Investment Company Institute) to discuss the mechanics of indexing, the myths surrounding passive investing, and the evidence on how index funds affect markets. They unpack questions about market concentration, price discovery, and whether indexing is changing the structure of capital markets. Key Points From This Episode: (0:00:04) Introduction to the Rational Reminder podcast and the hosts from PWL Capital. (0:00:24) Celebrating the 400th episode and reflecting on nearly eight years of podcasting. (0:01:09) Dan Bortolotti discusses the early days of podcasting and the transition from the Couch Potat...
+--------------------------------------------------
+
+Error fetching The Compound & Friends (US/Global Retail Sentiment): HTTP Error 404: Not Found
+
+Error fetching All-In Podcast (Tech/Macro/VC Disruption): HTTP Error 404: Not Found
 
