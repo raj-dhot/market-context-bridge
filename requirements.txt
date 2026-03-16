@@ -1,6 +1,6 @@
-duckduckgo-search
-trafilatura
-requests
-beautifulsoup4
-lxml
-youtube-transcript-api
+beautifulsoup4>=4.12
+duckduckgo-search>=6.0
+lxml>=5.2
+requests>=2.31
+trafilatura>=1.9
+youtube-transcript-api>=1.2
