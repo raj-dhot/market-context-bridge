@@ -1,2 +1,3 @@
 duckduckgo-search
 trafilatura
+requests
