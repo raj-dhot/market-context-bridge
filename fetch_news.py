@@ -1,3 +1,4 @@
+import base64
 import datetime as dt
 import html
 import re
@@ -368,27 +369,72 @@ def extract_episode_notes(item):
 # ── GOOGLE NEWS RSS ───────────────────────────────────────────────────────────
  
  
+def decode_google_news_url(google_url):
+    """Decode the real article URL from a Google News RSS redirect link.
+ 
+    Google News encodes the destination URL inside a base64 / protobuf
+    payload in the path (e.g. /rss/articles/CBMiXGh0dHBz...).  This
+    function extracts it without making any HTTP requests.
+    """
+    match = re.search(r"/articles/([A-Za-z0-9_-]+)", google_url)
+    if not match:
+        return None
+ 
+    encoded = match.group(1)
+    # Base64 requires padding to a multiple of 4
+    encoded += "=" * (-len(encoded) % 4)
+ 
+    try:
+        decoded = base64.urlsafe_b64decode(encoded)
+        # Find all URLs embedded in the decoded bytes
+        urls = re.findall(rb"https?://[^\s\x00-\x1f\"'<>]+", decoded)
+        for raw_url in urls:
+            url_str = raw_url.decode("utf-8", errors="ignore")
+            # Skip Google's own domains
+            if "google.com" not in url_str and "gstatic.com" not in url_str:
+                return url_str
+    except Exception:
+        pass
+ 
+    return None
+ 
+ 
 def resolve_google_news_url(google_url, session):
-    """Google News RSS wraps article URLs in a redirect. Follow it to get
-    the real source URL."""
+    """Get the real article URL from a Google News redirect link.
+ 
+    First attempts fast base64 decoding.  Falls back to following HTTP
+    redirects if decoding fails.
+    """
+    # Fast path: decode directly from the URL (no network call)
+    decoded = decode_google_news_url(google_url)
+    if decoded:
+        return decoded
+ 
+    # Slow fallback: follow the redirect chain
     try:
         resp = session.head(
             google_url, allow_redirects=True, timeout=REQUEST_TIMEOUT
         )
-        return resp.url
+        if "google.com" not in resp.url:
+            return resp.url
     except Exception:
-        try:
-            resp = session.get(
-                google_url,
-                allow_redirects=True,
-                timeout=REQUEST_TIMEOUT,
-                stream=True,
-            )
-            final_url = resp.url
-            resp.close()
+        pass
+ 
+    try:
+        resp = session.get(
+            google_url,
+            allow_redirects=True,
+            timeout=REQUEST_TIMEOUT,
+            stream=True,
+        )
+        final_url = resp.url
+        resp.close()
+        if "google.com" not in final_url:
             return final_url
-        except Exception:
-            return google_url
+    except Exception:
+        pass
+ 
+    return google_url
  
  
 def fetch_google_news_rss(query, session, max_items=8):
@@ -475,17 +521,24 @@ def build_news_section():
                 source = result["source"]
  
                 if published and not is_recent(published):
+                    print(f"  [Skip] Not recent: {title[:60]}")
                     continue
  
                 # Resolve the Google redirect to the real article URL
                 real_url = resolve_google_news_url(google_url, session)
+                print(f"  [Resolved] {real_url[:80]}")
                 if real_url in seen_urls:
                     continue
                 seen_urls.add(real_url)
  
                 # Fetch article body via trafilatura
                 body = fetch_article_text(real_url)
-                if not body or len(body) < NEWS_BODY_MIN_LENGTH:
+                body_len = len(body) if body else 0
+                if not body or body_len < NEWS_BODY_MIN_LENGTH:
+                    print(
+                        f"  [Skip] Body too short ({body_len} chars): "
+                        f"{title[:60]}"
+                    )
                     continue
  
                 if not source or source == "Unknown":
