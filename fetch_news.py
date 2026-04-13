@@ -4,17 +4,11 @@ import re
 import time
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlparse
  
 import requests
 import trafilatura
 from bs4 import BeautifulSoup
- 
-try:
-    from duckduckgo_search import DDGS
-except ImportError:
-    from ddgs import DDGS
- 
 from youtube_transcript_api import YouTubeTranscriptApi
  
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
@@ -36,9 +30,9 @@ PODCAST_FEEDS = {
 }
  
 NEWS_QUERIES = {
-    "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
-    "International & Emerging": "emerging markets international equities",
-    "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management news",
+    "North America (TSX & S&P 500)": "TSX OR S&P 500 stock market when:7d",
+    "International & Emerging": "emerging markets international equities when:7d",
+    "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management when:7d",
 }
  
 HEADERS = {
@@ -48,6 +42,8 @@ HEADERS = {
     )
 }
  
+GOOGLE_NEWS_RSS_BASE = "https://news.google.com/rss/search?q={query}&hl=en&gl=US&ceid=US:en"
+ 
 REQUEST_TIMEOUT = 20
 NEWS_ITEM_TARGET = 2
 NEWS_LOOKBACK_DAYS = 7
@@ -56,14 +52,10 @@ NEWS_BODY_MAX_CHARS = 2000
 EPISODE_TEXT_MAX_CHARS = 4000
 OUTPUT_FILE = Path("latest_news.txt")
 YOUTUBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
- 
-# Regex to detect YouTube Shorts URLs
 YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
  
-# Rate-limit settings for DuckDuckGo
-DDG_DELAY_BETWEEN_QUERIES = 4  # seconds between category queries
-DDG_MAX_RETRIES = 3
-DDG_BACKOFF_BASE = 5  # seconds; multiplied by attempt number
+# Delay between Google News RSS fetches (be polite)
+NEWS_FETCH_DELAY = 2
  
 # ── TEXT HELPERS ───────────────────────────────────────────────────────────────
  
@@ -94,7 +86,7 @@ def clean_social_noise(text):
     and zero-width / invisible unicode characters."""
     cleaned = html.unescape(text or "")
  
-    # Zero-width / invisible unicode chars (word joiner, zero-width space, etc.)
+    # Zero-width / invisible unicode chars
     cleaned = re.sub(r"[\u2060\u200b\u200c\u200d\ufeff\u00ad]+", "", cleaned)
     # Common emoji ranges
     cleaned = re.sub(
@@ -309,14 +301,17 @@ def fetch_youtube_transcript(url_or_id):
  
  
 def fetch_article_text(url):
-    downloaded = trafilatura.fetch_url(url)
-    if not downloaded:
+    try:
+        downloaded = trafilatura.fetch_url(url)
+        if not downloaded:
+            return None
+        extracted = trafilatura.extract(
+            downloaded, include_comments=False, include_links=False
+        )
+        cleaned = normalize_whitespace(extracted)
+        return cleaned or None
+    except Exception:
         return None
-    extracted = trafilatura.extract(
-        downloaded, include_comments=False, include_links=False
-    )
-    cleaned = normalize_whitespace(extracted)
-    return cleaned or None
  
  
 # ── RSS ITEM HELPERS ──────────────────────────────────────────────────────────
@@ -370,106 +365,153 @@ def extract_episode_notes(item):
     return "No transcript or show notes available."
  
  
-# ── NEWS SECTION ──────────────────────────────────────────────────────────────
+# ── GOOGLE NEWS RSS ───────────────────────────────────────────────────────────
  
  
-def get_news_results(query, retries=DDG_MAX_RETRIES):
-    """Fetch news results with retry + exponential backoff.
- 
-    A fresh DDGS instance is created on each attempt to avoid carrying
-    over any rate-limit state from a previous call.
-    """
-    last_exc = None
-    for attempt in range(retries):
-        ddgs = DDGS()
+def resolve_google_news_url(google_url, session):
+    """Google News RSS wraps article URLs in a redirect. Follow it to get
+    the real source URL."""
+    try:
+        resp = session.head(
+            google_url, allow_redirects=True, timeout=REQUEST_TIMEOUT
+        )
+        return resp.url
+    except Exception:
         try:
-            try:
-                results = list(
-                    ddgs.news(
-                        query,
-                        region="wt-wt",
-                        safesearch="moderate",
-                        timelimit="w",
-                        max_results=8,
-                    )
-                )
-            except TypeError:
-                results = list(ddgs.news(query, max_results=8))
-            return results
-        except Exception as exc:
-            last_exc = exc
-            wait = DDG_BACKOFF_BASE * (attempt + 1)
-            print(f"  [DDG] Attempt {attempt + 1} failed for '{query}': {exc}")
-            if attempt < retries - 1:
-                print(f"  [DDG] Retrying in {wait}s...")
-                time.sleep(wait)
-        finally:
-            close = getattr(ddgs, "close", None)
-            if callable(close):
-                close()
+            resp = session.get(
+                google_url,
+                allow_redirects=True,
+                timeout=REQUEST_TIMEOUT,
+                stream=True,
+            )
+            final_url = resp.url
+            resp.close()
+            return final_url
+        except Exception:
+            return google_url
  
-    raise last_exc
+ 
+def fetch_google_news_rss(query, session, max_items=8):
+    """Fetch news items from Google News RSS for the given query.
+ 
+    Returns a list of dicts with keys: title, url, source, published.
+    """
+    feed_url = GOOGLE_NEWS_RSS_BASE.format(query=quote(query))
+    print(f"  [Google News] Fetching: {feed_url}")
+    try:
+        resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
+        resp.raise_for_status()
+    except Exception as exc:
+        print(f"  [Google News] RSS fetch failed for '{query}': {exc}")
+        return []
+ 
+    soup = BeautifulSoup(resp.content, "xml")
+    items = soup.find_all("item")
+    print(f"  [Google News] Found {len(items)} items for '{query}'")
+    results = []
+ 
+    for item in items[:max_items]:
+        title = extract_tag_text(item, "title") or "Untitled"
+        link = extract_tag_text(item, "link")
+        pub_date = extract_tag_text(item, "pubDate")
+        source_tag = find_first_tag(item, "source")
+        source = (
+            normalize_whitespace(source_tag.get_text(" ", strip=True))
+            if source_tag
+            else "Unknown"
+        )
+ 
+        if not link:
+            continue
+ 
+        results.append({
+            "title": title,
+            "url": link,
+            "source": source,
+            "published": pub_date,
+        })
+ 
+    return results
+ 
+ 
+# ── NEWS SECTION ──────────────────────────────────────────────────────────────
  
  
 def build_news_section():
     lines = []
     query_list = list(NEWS_QUERIES.items())
  
-    for idx, (category, query) in enumerate(query_list):
-        lines.append(f"### {category.upper()} ###")
-        added = 0
-        seen_urls = set()
+    with requests.Session() as session:
+        session.headers.update(HEADERS)
  
-        try:
-            results = get_news_results(query)
-        except Exception as exc:
-            lines.append(f"News fetch error: {exc}")
-            lines.append("")
-            # Still delay before next query to avoid compounding the rate limit
+        for idx, (category, query) in enumerate(query_list):
+            lines.append(f"### {category.upper()} ###")
+            added = 0
+            seen_urls = set()
+ 
+            try:
+                results = fetch_google_news_rss(query, session)
+            except Exception as exc:
+                lines.append(f"News fetch error: {exc}")
+                lines.append("")
+                if idx < len(query_list) - 1:
+                    time.sleep(NEWS_FETCH_DELAY)
+                continue
+ 
+            if not results:
+                lines.append("No results returned from Google News RSS.")
+                lines.append("")
+                if idx < len(query_list) - 1:
+                    time.sleep(NEWS_FETCH_DELAY)
+                continue
+ 
+            for result in results:
+                if added >= NEWS_ITEM_TARGET:
+                    break
+ 
+                google_url = result["url"]
+                title = result["title"]
+                published = result["published"]
+                source = result["source"]
+ 
+                if published and not is_recent(published):
+                    continue
+ 
+                # Resolve the Google redirect to the real article URL
+                real_url = resolve_google_news_url(google_url, session)
+                if real_url in seen_urls:
+                    continue
+                seen_urls.add(real_url)
+ 
+                # Fetch article body via trafilatura
+                body = fetch_article_text(real_url)
+                if not body or len(body) < NEWS_BODY_MIN_LENGTH:
+                    continue
+ 
+                if not source or source == "Unknown":
+                    source = source_name_from_url(real_url)
+ 
+                lines.extend([
+                    f"TITLE: {title}",
+                    f"SOURCE: {source}",
+                    f"PUBLISHED: {published or 'Unknown'}",
+                    f"URL: {real_url}",
+                    f"CONTENT: {truncate_text(body, NEWS_BODY_MAX_CHARS)}",
+                    "",
+                ])
+                added += 1
+ 
+            if added == 0 and not any(
+                "News fetch error" in l for l in lines[-3:]
+            ):
+                lines.append(
+                    "No recent articles met the extraction threshold."
+                )
+                lines.append("")
+ 
+            # Polite delay between category fetches
             if idx < len(query_list) - 1:
-                time.sleep(DDG_DELAY_BETWEEN_QUERIES)
-            continue
- 
-        for result in results:
-            if added >= NEWS_ITEM_TARGET:
-                break
- 
-            url = normalize_whitespace(result.get("url") or result.get("href"))
-            title = normalize_whitespace(result.get("title"))
-            published = normalize_whitespace(result.get("date"))
- 
-            if not url or url in seen_urls:
-                continue
-            if published and not is_recent(published):
-                continue
-            seen_urls.add(url)
- 
-            body = fetch_article_text(url) or clean_social_noise(
-                result.get("body")
-            )
-            if not body or len(body) < NEWS_BODY_MIN_LENGTH:
-                continue
- 
-            source = normalize_whitespace(
-                result.get("source")
-            ) or source_name_from_url(url)
-            lines.extend([
-                f"TITLE: {title or 'Untitled'}",
-                f"SOURCE: {source}",
-                f"PUBLISHED: {published or 'Unknown'}",
-                f"URL: {url}",
-                f"CONTENT: {truncate_text(body, NEWS_BODY_MAX_CHARS)}",
-                "",
-            ])
-            added += 1
- 
-        if added == 0 and not any("News fetch error" in l for l in lines[-3:]):
-            lines.append("No recent articles met the extraction threshold.")
-            lines.append("")
- 
-        # Delay between queries to avoid rate-limiting
-        if idx < len(query_list) - 1:
-            time.sleep(DDG_DELAY_BETWEEN_QUERIES)
+                time.sleep(NEWS_FETCH_DELAY)
  
     return "\n".join(lines)
  
@@ -483,7 +525,6 @@ def fetch_youtube_episode(show_name, feed_url, session):
     response.raise_for_status()
     soup = BeautifulSoup(response.content, "xml")
  
-    # Walk entries to find the first non-Short
     entries = soup.find_all("entry")
     if not entries:
         raise ValueError("Feed contained no <entry> nodes")
@@ -495,7 +536,6 @@ def fetch_youtube_episode(show_name, feed_url, session):
             break
  
     if chosen is None:
-        # All entries were Shorts -- just take the first one
         chosen = entries[0]
  
     title = extract_tag_text(chosen, "title") or "Unknown episode"
@@ -509,9 +549,14 @@ def fetch_youtube_episode(show_name, feed_url, session):
         data_type = "Transcript"
         content = transcript
     else:
-        desc = find_first_tag(chosen, "media:description", "description", "summary")
+        desc = find_first_tag(
+            chosen, "media:description", "description", "summary"
+        )
         raw = desc.get_text(" ", strip=True) if desc else ""
-        content = clean_social_noise(raw) or "No transcript or description available."
+        content = (
+            clean_social_noise(raw)
+            or "No transcript or description available."
+        )
         data_type = "Show notes"
  
     return {
@@ -538,7 +583,6 @@ def fetch_rss_episode(show_name, feed_url, session):
         item, "published", "updated", "pubDate", "dc:date"
     ) or "Unknown"
  
-    # For RSS items, try scraping the episode webpage for richer content
     page_content = None
     if link and link.startswith("http") and not link.endswith(".mp3"):
         page_content = fetch_article_text(link)
@@ -568,7 +612,6 @@ def build_podcast_section(session):
         episode = None
         errors = []
  
-        # Try YouTube feed first if available
         if "youtube" in feeds:
             try:
                 episode = fetch_youtube_episode(
@@ -577,10 +620,11 @@ def build_podcast_section(session):
             except Exception as exc:
                 errors.append(f"YouTube: {exc}")
  
-        # Try RSS feed as fallback (or primary if no YouTube)
         if episode is None and "rss" in feeds:
             try:
-                episode = fetch_rss_episode(show_name, feeds["rss"], session)
+                episode = fetch_rss_episode(
+                    show_name, feeds["rss"], session
+                )
             except Exception as exc:
                 errors.append(f"RSS: {exc}")
  
