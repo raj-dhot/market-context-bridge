@@ -1,4 +1,3 @@
-import base64
 import datetime as dt
 import html
 import re
@@ -6,14 +5,14 @@ import time
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
- 
+
 import requests
 import trafilatura
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
- 
+
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
- 
+
 PODCAST_FEEDS = {
     "The Loonie Hour (Vancouver/Canada Macro)": {
         "youtube": "https://www.youtube.com/feeds/videos.xml?channel_id=UCdpU4qvzypmjZbbcLiPWV8A",
@@ -29,22 +28,22 @@ PODCAST_FEEDS = {
         "rss": "https://feeds.megaphone.fm/TCP4771071679",
     },
 }
- 
+
 NEWS_QUERIES = {
-    "North America (TSX & S&P 500)": "TSX OR S&P 500 stock market when:7d",
-    "International & Emerging": "emerging markets international equities when:7d",
-    "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management when:7d",
+    "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
+    "International & Emerging": "emerging markets international equities",
+    "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management",
 }
- 
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
     )
 }
- 
-GOOGLE_NEWS_RSS_BASE = "https://news.google.com/rss/search?q={query}&hl=en&gl=US&ceid=US:en"
- 
+
+BING_NEWS_RSS_BASE = "https://www.bing.com/news/search?q={query}&format=rss&count=10"
+
 REQUEST_TIMEOUT = 20
 NEWS_ITEM_TARGET = 2
 NEWS_LOOKBACK_DAYS = 7
@@ -54,25 +53,25 @@ EPISODE_TEXT_MAX_CHARS = 4000
 OUTPUT_FILE = Path("latest_news.txt")
 YOUTUBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
 YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
- 
-# Delay between Google News RSS fetches (be polite)
+
+# Delay between news RSS fetches (be polite)
 NEWS_FETCH_DELAY = 2
- 
+
 # ── TEXT HELPERS ───────────────────────────────────────────────────────────────
- 
- 
+
+
 def normalize_whitespace(text):
     return re.sub(r"\s+", " ", text or "").strip()
- 
- 
+
+
 def truncate_text(text, max_chars):
     text = normalize_whitespace(text)
     if len(text) <= max_chars:
         return text
     shortened = text[:max_chars].rsplit(" ", 1)[0]
     return (shortened or text[:max_chars]) + "..."
- 
- 
+
+
 def html_to_text(fragment):
     if not fragment:
         return ""
@@ -80,13 +79,13 @@ def html_to_text(fragment):
         html.unescape(fragment), "html.parser"
     ).get_text(" ", strip=True)
     return normalize_whitespace(text)
- 
- 
+
+
 def clean_social_noise(text):
     """Remove URLs, social handles, hashtags, promo filler, disclaimers,
     and zero-width / invisible unicode characters."""
     cleaned = html.unescape(text or "")
- 
+
     # Zero-width / invisible unicode chars
     cleaned = re.sub(r"[\u2060\u200b\u200c\u200d\ufeff\u00ad]+", "", cleaned)
     # Common emoji ranges
@@ -97,15 +96,15 @@ def clean_social_noise(text):
         " ",
         cleaned,
     )
- 
+
     # URLs and emails
     cleaned = re.sub(r"https?://\S+", " ", cleaned)
     cleaned = re.sub(r"www\.\S+", " ", cleaned)
     cleaned = re.sub(r"\S+@\S+\.\S+", " ", cleaned)
- 
+
     # Social handles and hashtags
     cleaned = re.sub(r"[@#]\S+", " ", cleaned)
- 
+
     # Common promo / filler patterns
     for pattern in (
         r"\bFollow(?:\s+(?:us|the besties|on))?\b[^.!\n]{0,150}",
@@ -119,7 +118,7 @@ def clean_social_noise(text):
         r"\bGet Your Tickets Here!\s*",
     ):
         cleaned = re.sub(pattern, " ", cleaned, flags=re.IGNORECASE)
- 
+
     # Legal disclaimers (Compound-style boilerplate)
     cleaned = re.sub(
         r"(?:Public )?Disclosure:.*?(?:adchoices|disclosures)\b.*",
@@ -145,17 +144,17 @@ def clean_social_noise(text):
         cleaned,
         flags=re.IGNORECASE | re.DOTALL,
     )
- 
+
     # HTML entities that survived
     cleaned = re.sub(r"&[a-z]+;", " ", cleaned)
     cleaned = re.sub(r"&#\d+;", " ", cleaned)
- 
+
     return normalize_whitespace(cleaned)
- 
- 
+
+
 # ── DATE HELPERS ──────────────────────────────────────────────────────────────
- 
- 
+
+
 def parse_datetime(value):
     if not value:
         return None
@@ -175,8 +174,8 @@ def parse_datetime(value):
         except ValueError:
             continue
     return None
- 
- 
+
+
 def is_recent(value, days=NEWS_LOOKBACK_DAYS):
     published_at = parse_datetime(value)
     if published_at is None:
@@ -185,11 +184,11 @@ def is_recent(value, days=NEWS_LOOKBACK_DAYS):
         published_at = published_at.replace(tzinfo=dt.timezone.utc)
     cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
     return published_at >= cutoff
- 
- 
+
+
 # ── XML / RSS HELPERS ─────────────────────────────────────────────────────────
- 
- 
+
+
 def source_name_from_url(url):
     if not url:
         return "Unknown"
@@ -197,8 +196,8 @@ def source_name_from_url(url):
     if hostname.startswith("www."):
         hostname = hostname[4:]
     return hostname or "Unknown"
- 
- 
+
+
 def find_first_tag(parent, *names):
     wanted = {name.split(":")[-1].lower() for name in names}
     for recursive in (False, True):
@@ -207,37 +206,37 @@ def find_first_tag(parent, *names):
             if tag_name and tag_name.split(":")[-1].lower() in wanted:
                 return tag
     return None
- 
- 
+
+
 def extract_tag_text(parent, *names):
     tag = find_first_tag(parent, *names)
     if not tag:
         return ""
     return normalize_whitespace(tag.get_text(" ", strip=True))
- 
- 
+
+
 # ── YOUTUBE HELPERS ───────────────────────────────────────────────────────────
- 
- 
+
+
 def extract_youtube_video_id(url_or_id):
     if not url_or_id:
         return None
     candidate = url_or_id.strip()
- 
+
     if candidate.startswith("yt:video:"):
         candidate = candidate.rsplit(":", 1)[-1]
     if YOUTUBE_ID_PATTERN.fullmatch(candidate):
         return candidate
- 
+
     parsed = urlparse(candidate)
     hostname = parsed.netloc.lower()
     path_parts = [part for part in parsed.path.split("/") if part]
- 
+
     if "youtu.be" in hostname and path_parts:
         possible = path_parts[0]
         if YOUTUBE_ID_PATTERN.fullmatch(possible):
             return possible
- 
+
     if "youtube.com" in hostname or "youtube-nocookie.com" in hostname:
         query_id = parse_qs(parsed.query).get("v", [None])[0]
         if query_id and YOUTUBE_ID_PATTERN.fullmatch(query_id):
@@ -248,30 +247,30 @@ def extract_youtube_video_id(url_or_id):
             possible = path_parts[1]
             if YOUTUBE_ID_PATTERN.fullmatch(possible):
                 return possible
- 
+
     match = re.search(
         r"(?:v=|youtu\.be/|youtube\.com/(?:embed|shorts|live|v)/)"
         r"([A-Za-z0-9_-]{11})",
         candidate,
     )
     return match.group(1) if match else None
- 
- 
+
+
 def is_youtube_short(entry):
     """Return True if the YouTube feed entry is a Short (not a full episode)."""
     link = extract_item_link(entry)
     if link and YOUTUBE_SHORTS_PATTERN.search(link):
         return True
     return False
- 
- 
+
+
 def fetch_youtube_transcript(url_or_id):
     video_id = extract_youtube_video_id(url_or_id)
     if not video_id:
         return None
- 
+
     chunks = []
- 
+
     # Try the newer .fetch() API first
     try:
         api = YouTubeTranscriptApi()
@@ -285,7 +284,7 @@ def fetch_youtube_transcript(url_or_id):
                     chunks.append(text)
     except Exception:
         chunks = []
- 
+
     # Fallback to legacy .get_transcript()
     if not chunks:
         try:
@@ -296,11 +295,11 @@ def fetch_youtube_transcript(url_or_id):
                     chunks.append(text)
         except Exception:
             return None
- 
+
     cleaned = clean_social_noise(" ".join(chunks))
     return cleaned or None
- 
- 
+
+
 def fetch_article_text(url):
     try:
         downloaded = trafilatura.fetch_url(url)
@@ -313,11 +312,11 @@ def fetch_article_text(url):
         return cleaned or None
     except Exception:
         return None
- 
- 
+
+
 # ── RSS ITEM HELPERS ──────────────────────────────────────────────────────────
- 
- 
+
+
 def extract_item_link(item):
     """Get the best URL from an RSS <item> or Atom <entry>."""
     for link_tag in item.find_all("link", recursive=False):
@@ -327,7 +326,7 @@ def extract_item_link(item):
         text = normalize_whitespace(link_tag.get_text(" ", strip=True))
         if text and text.startswith("http"):
             return text
- 
+
     guid_text = extract_tag_text(item, "guid", "id")
     if guid_text:
         if guid_text.startswith("http"):
@@ -335,20 +334,20 @@ def extract_item_link(item):
         video_id = extract_youtube_video_id(guid_text)
         if video_id:
             return f"https://www.youtube.com/watch?v={video_id}"
- 
+
     video_id = extract_tag_text(item, "yt:videoId", "videoId")
     if video_id:
         normalized = extract_youtube_video_id(video_id)
         if normalized:
             return f"https://www.youtube.com/watch?v={normalized}"
- 
+
     enclosure = find_first_tag(item, "enclosure")
     if enclosure and enclosure.get("url"):
         return enclosure["url"].strip()
- 
+
     return None
- 
- 
+
+
 def extract_episode_notes(item):
     """Pull the richest text from an RSS item's description fields."""
     for tag_names in (
@@ -364,175 +363,108 @@ def extract_episode_notes(item):
         if text:
             return text
     return "No transcript or show notes available."
- 
- 
-# ── GOOGLE NEWS RSS ───────────────────────────────────────────────────────────
- 
- 
-def decode_google_news_url(google_url):
-    """Decode the real article URL from a Google News RSS redirect link.
- 
-    Google News encodes the destination URL inside a base64 / protobuf
-    payload in the path (e.g. /rss/articles/CBMiXGh0dHBz...).  This
-    function extracts it without making any HTTP requests.
-    """
-    match = re.search(r"/articles/([A-Za-z0-9_-]+)", google_url)
-    if not match:
-        return None
- 
-    encoded = match.group(1)
-    # Base64 requires padding to a multiple of 4
-    encoded += "=" * (-len(encoded) % 4)
- 
-    try:
-        decoded = base64.urlsafe_b64decode(encoded)
-        # Find all URLs embedded in the decoded bytes
-        urls = re.findall(rb"https?://[^\s\x00-\x1f\"'<>]+", decoded)
-        for raw_url in urls:
-            url_str = raw_url.decode("utf-8", errors="ignore")
-            # Skip Google's own domains
-            if "google.com" not in url_str and "gstatic.com" not in url_str:
-                return url_str
-    except Exception:
-        pass
- 
-    return None
- 
- 
-def resolve_google_news_url(google_url, session):
-    """Get the real article URL from a Google News redirect link.
- 
-    First attempts fast base64 decoding.  Falls back to following HTTP
-    redirects if decoding fails.
-    """
-    # Fast path: decode directly from the URL (no network call)
-    decoded = decode_google_news_url(google_url)
-    if decoded:
-        return decoded
- 
-    # Slow fallback: follow the redirect chain
-    try:
-        resp = session.head(
-            google_url, allow_redirects=True, timeout=REQUEST_TIMEOUT
-        )
-        if "google.com" not in resp.url:
-            return resp.url
-    except Exception:
-        pass
- 
-    try:
-        resp = session.get(
-            google_url,
-            allow_redirects=True,
-            timeout=REQUEST_TIMEOUT,
-            stream=True,
-        )
-        final_url = resp.url
-        resp.close()
-        if "google.com" not in final_url:
-            return final_url
-    except Exception:
-        pass
- 
-    return google_url
- 
- 
-def fetch_google_news_rss(query, session, max_items=8):
-    """Fetch news items from Google News RSS for the given query.
- 
+
+
+# ── BING NEWS RSS ─────────────────────────────────────────────────────────────
+
+
+def fetch_bing_news_rss(query, session, max_items=8):
+    """Fetch news items from Bing News RSS for the given query.
+
+    Bing returns direct article URLs (no encoding or redirect tricks),
+    making downstream extraction with trafilatura straightforward.
+
     Returns a list of dicts with keys: title, url, source, published.
     """
-    feed_url = GOOGLE_NEWS_RSS_BASE.format(query=quote(query))
-    print(f"  [Google News] Fetching: {feed_url}")
+    feed_url = BING_NEWS_RSS_BASE.format(query=quote(query))
+    print(f"  [Bing News] Fetching: {feed_url}")
     try:
         resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
     except Exception as exc:
-        print(f"  [Google News] RSS fetch failed for '{query}': {exc}")
+        print(f"  [Bing News] RSS fetch failed for '{query}': {exc}")
         return []
- 
+
     soup = BeautifulSoup(resp.content, "xml")
     items = soup.find_all("item")
-    print(f"  [Google News] Found {len(items)} items for '{query}'")
+    print(f"  [Bing News] Found {len(items)} items for '{query}'")
     results = []
- 
+
     for item in items[:max_items]:
         title = extract_tag_text(item, "title") or "Untitled"
         link = extract_tag_text(item, "link")
         pub_date = extract_tag_text(item, "pubDate")
-        source_tag = find_first_tag(item, "source")
+        source_tag = find_first_tag(item, "news:source", "source")
         source = (
             normalize_whitespace(source_tag.get_text(" ", strip=True))
             if source_tag
             else "Unknown"
         )
- 
+
         if not link:
             continue
- 
+
         results.append({
             "title": title,
             "url": link,
             "source": source,
             "published": pub_date,
         })
- 
+
     return results
- 
- 
+
+
 # ── NEWS SECTION ──────────────────────────────────────────────────────────────
- 
- 
+
+
 def build_news_section():
     lines = []
     query_list = list(NEWS_QUERIES.items())
- 
+
     with requests.Session() as session:
         session.headers.update(HEADERS)
- 
+
         for idx, (category, query) in enumerate(query_list):
             lines.append(f"### {category.upper()} ###")
             added = 0
             seen_urls = set()
- 
+
             try:
-                results = fetch_google_news_rss(query, session)
+                results = fetch_bing_news_rss(query, session)
             except Exception as exc:
                 lines.append(f"News fetch error: {exc}")
                 lines.append("")
                 if idx < len(query_list) - 1:
                     time.sleep(NEWS_FETCH_DELAY)
                 continue
- 
+
             if not results:
-                lines.append("No results returned from Google News RSS.")
+                lines.append("No results returned from Bing News RSS.")
                 lines.append("")
                 if idx < len(query_list) - 1:
                     time.sleep(NEWS_FETCH_DELAY)
                 continue
- 
+
             for result in results:
                 if added >= NEWS_ITEM_TARGET:
                     break
- 
-                google_url = result["url"]
+
+                url = result["url"]
                 title = result["title"]
                 published = result["published"]
                 source = result["source"]
- 
+
                 if published and not is_recent(published):
                     print(f"  [Skip] Not recent: {title[:60]}")
                     continue
- 
-                # Resolve the Google redirect to the real article URL
-                real_url = resolve_google_news_url(google_url, session)
-                print(f"  [Resolved] {real_url[:80]}")
-                if real_url in seen_urls:
+
+                if url in seen_urls:
                     continue
-                seen_urls.add(real_url)
- 
+                seen_urls.add(url)
+                print(f"  [Fetching] {url[:80]}")
+
                 # Fetch article body via trafilatura
-                body = fetch_article_text(real_url)
+                body = fetch_article_text(url)
                 body_len = len(body) if body else 0
                 if not body or body_len < NEWS_BODY_MIN_LENGTH:
                     print(
@@ -540,20 +472,20 @@ def build_news_section():
                         f"{title[:60]}"
                     )
                     continue
- 
+
                 if not source or source == "Unknown":
-                    source = source_name_from_url(real_url)
- 
+                    source = source_name_from_url(url)
+
                 lines.extend([
                     f"TITLE: {title}",
                     f"SOURCE: {source}",
                     f"PUBLISHED: {published or 'Unknown'}",
-                    f"URL: {real_url}",
+                    f"URL: {url}",
                     f"CONTENT: {truncate_text(body, NEWS_BODY_MAX_CHARS)}",
                     "",
                 ])
                 added += 1
- 
+
             if added == 0 and not any(
                 "News fetch error" in l for l in lines[-3:]
             ):
@@ -561,42 +493,42 @@ def build_news_section():
                     "No recent articles met the extraction threshold."
                 )
                 lines.append("")
- 
+
             # Polite delay between category fetches
             if idx < len(query_list) - 1:
                 time.sleep(NEWS_FETCH_DELAY)
- 
+
     return "\n".join(lines)
- 
- 
+
+
 # ── PODCAST SECTION ───────────────────────────────────────────────────────────
- 
- 
+
+
 def fetch_youtube_episode(show_name, feed_url, session):
     """Fetch the latest *full* episode from a YouTube RSS feed (skip Shorts)."""
     response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, "xml")
- 
+
     entries = soup.find_all("entry")
     if not entries:
         raise ValueError("Feed contained no <entry> nodes")
- 
+
     chosen = None
     for entry in entries:
         if not is_youtube_short(entry):
             chosen = entry
             break
- 
+
     if chosen is None:
         chosen = entries[0]
- 
+
     title = extract_tag_text(chosen, "title") or "Unknown episode"
     link = extract_item_link(chosen) or "Unavailable"
     published = extract_tag_text(
         chosen, "published", "updated"
     ) or "Unknown"
- 
+
     transcript = fetch_youtube_transcript(link)
     if transcript:
         data_type = "Transcript"
@@ -611,7 +543,7 @@ def fetch_youtube_episode(show_name, feed_url, session):
             or "No transcript or description available."
         )
         data_type = "Show notes"
- 
+
     return {
         "title": title,
         "published": published,
@@ -619,8 +551,8 @@ def fetch_youtube_episode(show_name, feed_url, session):
         "data_type": data_type,
         "content": content,
     }
- 
- 
+
+
 def fetch_rss_episode(show_name, feed_url, session):
     """Fetch the latest episode from a standard RSS feed."""
     response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
@@ -629,26 +561,26 @@ def fetch_rss_episode(show_name, feed_url, session):
     item = soup.find("item")
     if item is None:
         raise ValueError("Feed contained no <item> nodes")
- 
+
     title = extract_tag_text(item, "title") or "Unknown episode"
     link = extract_item_link(item) or "Unavailable"
     published = extract_tag_text(
         item, "published", "updated", "pubDate", "dc:date"
     ) or "Unknown"
- 
+
     page_content = None
     if link and link.startswith("http") and not link.endswith(".mp3"):
         page_content = fetch_article_text(link)
         if page_content:
             page_content = clean_social_noise(page_content)
- 
+
     if page_content and len(page_content) > 200:
         data_type = "Episode page"
         content = page_content
     else:
         data_type = "Show notes"
         content = extract_episode_notes(item)
- 
+
     return {
         "title": title,
         "published": published,
@@ -656,15 +588,15 @@ def fetch_rss_episode(show_name, feed_url, session):
         "data_type": data_type,
         "content": content,
     }
- 
- 
+
+
 def build_podcast_section(session):
     lines = ["### SOCIAL & PODCAST INTELLIGENCE ###"]
- 
+
     for show_name, feeds in PODCAST_FEEDS.items():
         episode = None
         errors = []
- 
+
         if "youtube" in feeds:
             try:
                 episode = fetch_youtube_episode(
@@ -672,7 +604,7 @@ def build_podcast_section(session):
                 )
             except Exception as exc:
                 errors.append(f"YouTube: {exc}")
- 
+
         if episode is None and "rss" in feeds:
             try:
                 episode = fetch_rss_episode(
@@ -680,7 +612,7 @@ def build_podcast_section(session):
                 )
             except Exception as exc:
                 errors.append(f"RSS: {exc}")
- 
+
         if episode:
             lines.extend([
                 f"SHOW: {show_name}",
@@ -700,13 +632,13 @@ def build_podcast_section(session):
                 "-" * 50,
                 "",
             ])
- 
+
     return "\n".join(lines)
- 
- 
+
+
 # ── MAIN ──────────────────────────────────────────────────────────────────────
- 
- 
+
+
 def build_report():
     today = dt.datetime.now().strftime("%Y-%m-%d")
     sections = [
@@ -715,19 +647,19 @@ def build_report():
         "",
         build_news_section(),
     ]
- 
+
     with requests.Session() as session:
         session.headers.update(HEADERS)
         sections.append(build_podcast_section(session))
- 
+
     return "\n".join(section for section in sections if section).strip() + "\n"
- 
- 
+
+
 def fetch_content(output_file=OUTPUT_FILE):
     report = build_report()
     output_file.write_text(report, encoding="utf-8")
     print(f"Intelligence report written to {output_file}")
- 
- 
+
+
 if __name__ == "__main__":
     fetch_content()
