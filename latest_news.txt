@@ -1,13 +1,13 @@
 OCEANFRONT MARKET INTELLIGENCE - 2026-04-13
 ==================================================
 ### NORTH AMERICA (TSX & S&P 500) ###
-News fetch error: https://duckduckgo.com/news.js?l=wt-wt&o=json&noamp=1&q=TSX+S%26P+500+stock+market&vqd=4-112291065381863747079171647137370362744&p=-1&df=w&s=30 403 Ratelimit
+News fetch error: https://duckduckgo.com/news.js?l=wt-wt&o=json&noamp=1&q=TSX+S%26P+500+stock+market&vqd=4-112296990380771201349388031514433402520&p=-1&df=w&s=30 403 Ratelimit
 
 ### INTERNATIONAL & EMERGING ###
-News fetch error: https://duckduckgo.com/news.js?l=wt-wt&o=json&noamp=1&q=emerging+markets+international+equities&vqd=4-78565489231744497183456502330387303759&p=-1&df=w 403 Ratelimit
+News fetch error: https://duckduckgo.com/news.js?l=wt-wt&o=json&noamp=1&q=emerging+markets+international+equities&vqd=4-78563595361748498210564324669636896943&p=-1&df=w 403 Ratelimit
 
 ### COMPETITOR & AI PULSE ###
-News fetch error: https://duckduckgo.com/news.js?l=wt-wt&o=json&noamp=1&q=Wealthsimple+OR+Questrade+OR+AI+wealth+management+news&vqd=4-337019388931511832922598226191374834935&p=-1&df=w 403 Ratelimit
+News fetch error: https://duckduckgo.com/news.js?l=wt-wt&o=json&noamp=1&q=Wealthsimple+OR+Questrade+OR+AI+wealth+management+news&vqd=4-337013636333087870303975399968481655063&p=-1&df=w 403 Ratelimit
 
 ### SOCIAL & PODCAST INTELLIGENCE ###
 SHOW: The Loonie Hour (Vancouver/Canada Macro)
