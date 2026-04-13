@@ -1,35 +1,67 @@
 name: Weekly Deep-Dive News Fetcher
-
+ 
 on:
   schedule:
-    - cron: '0 13 * * 1' # Runs 6:00 AM PDT every Monday
-  workflow_dispatch: 
-
+    - cron: '0 13 * * 1'  # 6:00 AM PDT every Monday
+  workflow_dispatch:       # Manual trigger from Actions tab
+ 
+# Prevent overlapping runs
+concurrency:
+  group: news-fetcher
+  cancel-in-progress: true
+ 
 jobs:
   fetch-and-push:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
-
+ 
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+ 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
+ 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+ 
       - name: Install Libraries
         run: pip install -r requirements.txt
-
+ 
       - name: Run Scraper
         run: python fetch_news.py
-
+        env:
+          PYTHONUNBUFFERED: "1"
+ 
       - name: Commit News to Repo
         run: |
           git config --global user.name "Market-Intelligence-Bot"
           git config --global user.email "bot@oceanfront.wealth"
           git add latest_news.txt
-          git commit -m "Automated update: Weekly Market Intelligence [$(date +'%Y-%m-%d')]" || exit 0
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Automated update: Weekly Market Intelligence [$(date +'%Y-%m-%d')]"
+            git push
+          fi
+ 
+  # Keeps the workflow alive by preventing GitHub's 60-day inactivity disable.
+  # This job runs on the same schedule but does nothing heavy. As long as the
+  # workflow itself executes, GitHub resets the inactivity timer.
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Keepalive ping
+        run: echo "Workflow is active - $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
