@@ -1,6 +1,7 @@
 import datetime as dt
 import html
 import re
+import sys
 import time
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -24,8 +25,12 @@ PODCAST_FEEDS = {
     "Rational Reminder (Canada Investing)": {
         "rss": "https://rationalreminder.libsyn.com/rss",
     },
+    # The Compound uses a dedicated pipeline (see fetch_compound_episode).
     "The Compound & Friends (US Retail Sentiment)": {
+        "handler": "compound",
+        "youtube": "https://www.youtube.com/feeds/videos.xml?channel_id=UCMExRegvFqOy9PSHcnMbsTQ",
         "rss": "https://feeds.megaphone.fm/TCP4771071679",
+        "website_search": "https://thecompoundnews.com/?s={query}",
     },
 }
 
@@ -56,6 +61,14 @@ YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
 
 # Delay between news RSS fetches (be polite)
 NEWS_FETCH_DELAY = 2
+
+# ── LOGGING ───────────────────────────────────────────────────────────────────
+
+
+def log(msg):
+    """Write a diagnostic line to stderr so it's visible in run logs."""
+    print(f"[fetch_news] {msg}", file=sys.stderr)
+
 
 # ── TEXT HELPERS ───────────────────────────────────────────────────────────────
 
@@ -265,39 +278,46 @@ def is_youtube_short(entry):
 
 
 def fetch_youtube_transcript(url_or_id):
+    """Fetch a YouTube transcript. Returns (text, error_reason).
+    text is None on failure; error_reason is a short string for diagnostics.
+    """
     video_id = extract_youtube_video_id(url_or_id)
     if not video_id:
-        return None
+        return None, "invalid_video_id"
 
     chunks = []
+    last_error = None
 
-    # Try the newer .fetch() API first
     try:
         api = YouTubeTranscriptApi()
-        if hasattr(api, "fetch"):
-            transcript = api.fetch(video_id)
-            for entry in transcript:
-                text = getattr(entry, "text", None)
-                if text is None and isinstance(entry, dict):
-                    text = entry.get("text")
-                if text:
-                    chunks.append(text)
-    except Exception:
-        chunks = []
+        transcript = api.fetch(video_id, languages=("en", "en-US", "en-GB"))
+        for snippet in transcript:
+            text = getattr(snippet, "text", None)
+            if text is None and isinstance(snippet, dict):
+                text = snippet.get("text")
+            if text:
+                chunks.append(text)
+    except Exception as exc:
+        last_error = f"{type(exc).__name__}: {str(exc)[:180]}"
 
-    # Fallback to legacy .get_transcript()
-    if not chunks:
+    # Legacy fallback, only if the method still exists in the installed version.
+    if not chunks and hasattr(YouTubeTranscriptApi, "get_transcript"):
         try:
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
             for entry in transcript:
-                text = entry.get("text")
+                text = entry.get("text") if isinstance(entry, dict) else None
                 if text:
                     chunks.append(text)
-        except Exception:
-            return None
+        except Exception as exc:
+            last_error = f"{type(exc).__name__}: {str(exc)[:180]}"
+
+    if not chunks:
+        return None, last_error or "no_snippets"
 
     cleaned = clean_social_noise(" ".join(chunks))
-    return cleaned or None
+    if not cleaned:
+        return None, "empty_after_cleaning"
+    return cleaned, None
 
 
 def fetch_article_text(url):
@@ -377,17 +397,17 @@ def fetch_bing_news_rss(query, session, max_items=8):
     Returns a list of dicts with keys: title, url, source, published.
     """
     feed_url = BING_NEWS_RSS_BASE.format(query=quote(query))
-    print(f"  [Bing News] Fetching: {feed_url}")
+    log(f"Bing News fetching: {feed_url}")
     try:
         resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
     except Exception as exc:
-        print(f"  [Bing News] RSS fetch failed for '{query}': {exc}")
+        log(f"Bing News RSS fetch failed for '{query}': {exc}")
         return []
 
     soup = BeautifulSoup(resp.content, "xml")
     items = soup.find_all("item")
-    print(f"  [Bing News] Found {len(items)} items for '{query}'")
+    log(f"Bing News found {len(items)} items for '{query}'")
     results = []
 
     for item in items[:max_items]:
@@ -455,20 +475,20 @@ def build_news_section():
                 source = result["source"]
 
                 if published and not is_recent(published):
-                    print(f"  [Skip] Not recent: {title[:60]}")
+                    log(f"Skip (not recent): {title[:60]}")
                     continue
 
                 if url in seen_urls:
                     continue
                 seen_urls.add(url)
-                print(f"  [Fetching] {url[:80]}")
+                log(f"Fetching: {url[:80]}")
 
                 # Fetch article body via trafilatura
                 body = fetch_article_text(url)
                 body_len = len(body) if body else 0
                 if not body or body_len < NEWS_BODY_MIN_LENGTH:
-                    print(
-                        f"  [Skip] Body too short ({body_len} chars): "
+                    log(
+                        f"Skip (body too short, {body_len} chars): "
                         f"{title[:60]}"
                     )
                     continue
@@ -529,11 +549,12 @@ def fetch_youtube_episode(show_name, feed_url, session):
         chosen, "published", "updated"
     ) or "Unknown"
 
-    transcript = fetch_youtube_transcript(link)
+    transcript, tr_err = fetch_youtube_transcript(link)
     if transcript:
         data_type = "Transcript"
         content = transcript
     else:
+        log(f"[{show_name}] YouTube transcript failed ({tr_err}); using description")
         desc = find_first_tag(
             chosen, "media:description", "description", "summary"
         )
@@ -590,6 +611,202 @@ def fetch_rss_episode(show_name, feed_url, session):
     }
 
 
+# ── COMPOUND-SPECIFIC PIPELINE ────────────────────────────────────────────────
+
+
+def _normalize_title(title):
+    """Lowercased, punctuation-stripped title for loose matching."""
+    cleaned = re.sub(r"[^\w\s]", " ", (title or "").lower())
+    return normalize_whitespace(cleaned)
+
+
+def _title_similarity(a, b):
+    """Jaccard similarity over token sets. 0.0 to 1.0."""
+    ta = set(_normalize_title(a).split())
+    tb = set(_normalize_title(b).split())
+    # Drop very common filler tokens that wouldn't disambiguate.
+    stop = {"the", "a", "an", "with", "and", "of", "on", "in", "to", "is",
+            "for", "episode", "ep", "ft", "feat"}
+    ta -= stop
+    tb -= stop
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+
+def _find_matching_youtube_entry(entries, rss_title):
+    """Given YouTube feed <entry>s and an RSS episode title, return the
+    best-matching entry (non-Short), or None."""
+    best = None
+    best_score = 0.0
+    for entry in entries:
+        if is_youtube_short(entry):
+            continue
+        yt_title = extract_tag_text(entry, "title")
+        score = _title_similarity(rss_title, yt_title)
+        if score > best_score:
+            best = entry
+            best_score = score
+    # Require a reasonable overlap before trusting the match.
+    if best_score >= 0.4:
+        return best, best_score
+    return None, best_score
+
+
+def _fetch_compound_website_episode(rss_title, session, website_search):
+    """Try to locate and scrape the Compound's own episode page.
+    Returns article text or None."""
+    if not website_search:
+        return None
+    tokens = _normalize_title(rss_title).split()
+    if not tokens:
+        return None
+    query = " ".join(tokens[:6])
+    search_url = website_search.format(query=quote(query))
+    try:
+        r = session.get(search_url, timeout=REQUEST_TIMEOUT)
+        r.raise_for_status()
+    except Exception as exc:
+        log(f"[Compound] website search failed: {exc}")
+        return None
+
+    soup = BeautifulSoup(r.content, "html.parser")
+    candidate_url = None
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if not href.startswith("http"):
+            continue
+        if "thecompoundnews.com" not in href:
+            continue
+        if any(seg in href for seg in ("/tag/", "/category/", "/?s=", "/page/")):
+            continue
+        candidate_url = href
+        break
+
+    if not candidate_url:
+        log("[Compound] no matching episode page found on website")
+        return None
+
+    log(f"[Compound] trying episode page: {candidate_url}")
+    body = fetch_article_text(candidate_url)
+    if body and len(body) > 400:
+        return body
+    return None
+
+
+def fetch_compound_episode(show_name, feeds, session):
+    """Dedicated pipeline for The Compound & Friends.
+
+    Strategy:
+      1. Pull latest episode metadata from the podcast RSS (title, pub date).
+      2. Fetch the YouTube channel feed; match the latest RSS episode by title.
+      3. Try to fetch the YouTube transcript for that matched video.
+      4. If transcript fails, scrape the show's website episode page.
+      5. Fall back to RSS show notes only as a last resort.
+    Always reports in the log which path succeeded.
+    """
+    rss_url = feeds.get("rss")
+    yt_url = feeds.get("youtube")
+    site_search = feeds.get("website_search")
+
+    # 1. Load RSS for title + publish date + canonical URL.
+    rss_title = "Unknown episode"
+    rss_link = "Unavailable"
+    rss_published = "Unknown"
+    rss_item = None
+    if rss_url:
+        try:
+            r = session.get(rss_url, timeout=REQUEST_TIMEOUT)
+            r.raise_for_status()
+            rss_soup = BeautifulSoup(r.content, "xml")
+            rss_item = rss_soup.find("item")
+            if rss_item is not None:
+                rss_title = extract_tag_text(rss_item, "title") or rss_title
+                rss_link = extract_item_link(rss_item) or rss_link
+                rss_published = extract_tag_text(
+                    rss_item, "pubDate", "published", "updated", "dc:date"
+                ) or rss_published
+        except Exception as exc:
+            log(f"[Compound] RSS load failed: {exc}")
+
+    # 2. Load YouTube feed and match by title.
+    yt_link = None
+    yt_title = None
+    match_score = 0.0
+    if yt_url:
+        try:
+            r = session.get(yt_url, timeout=REQUEST_TIMEOUT)
+            r.raise_for_status()
+            yt_soup = BeautifulSoup(r.content, "xml")
+            entries = yt_soup.find_all("entry")
+            match, match_score = _find_matching_youtube_entry(
+                entries, rss_title
+            )
+            if match is not None:
+                yt_title = extract_tag_text(match, "title")
+                yt_link = extract_item_link(match)
+                log(
+                    f"[Compound] matched YouTube video (score={match_score:.2f}): "
+                    f"{(yt_title or '')[:70]}"
+                )
+            else:
+                log(
+                    f"[Compound] no YouTube title match for '{rss_title[:60]}' "
+                    f"(best score={match_score:.2f})"
+                )
+        except Exception as exc:
+            log(f"[Compound] YouTube feed load failed: {exc}")
+
+    # 3. Try YouTube transcript on the matched video.
+    if yt_link:
+        transcript, tr_err = fetch_youtube_transcript(yt_link)
+        if transcript:
+            log("[Compound] using YouTube transcript")
+            return {
+                "title": rss_title,
+                "published": rss_published,
+                "url": yt_link,
+                "data_type": "YouTube transcript",
+                "content": transcript,
+            }
+        else:
+            log(f"[Compound] YouTube transcript unavailable ({tr_err})")
+
+    # 4. Fall back to Compound's website episode page.
+    website_body = _fetch_compound_website_episode(
+        rss_title, session, site_search
+    )
+    if website_body:
+        log("[Compound] using Compound website episode page")
+        return {
+            "title": rss_title,
+            "published": rss_published,
+            "url": yt_link or rss_link,
+            "data_type": "Compound website episode page",
+            "content": clean_social_noise(website_body),
+        }
+
+    # 5. Last resort: RSS show notes.
+    if rss_item is not None:
+        notes = extract_episode_notes(rss_item)
+        log("[Compound] falling back to RSS show notes")
+        return {
+            "title": rss_title,
+            "published": rss_published,
+            "url": yt_link or rss_link,
+            "data_type": "Show notes (fallback)",
+            "content": notes,
+        }
+
+    raise RuntimeError(
+        "All Compound sources failed: no RSS item, no YouTube match, "
+        "no website page"
+    )
+
+
+# ── DISPATCH ──────────────────────────────────────────────────────────────────
+
+
 def build_podcast_section(session):
     lines = ["### SOCIAL & PODCAST INTELLIGENCE ###"]
 
@@ -597,21 +814,28 @@ def build_podcast_section(session):
         episode = None
         errors = []
 
-        if "youtube" in feeds:
+        # Custom handlers get routed first.
+        if feeds.get("handler") == "compound":
             try:
-                episode = fetch_youtube_episode(
-                    show_name, feeds["youtube"], session
-                )
+                episode = fetch_compound_episode(show_name, feeds, session)
             except Exception as exc:
-                errors.append(f"YouTube: {exc}")
+                errors.append(f"Compound handler: {exc}")
+        else:
+            if "youtube" in feeds:
+                try:
+                    episode = fetch_youtube_episode(
+                        show_name, feeds["youtube"], session
+                    )
+                except Exception as exc:
+                    errors.append(f"YouTube: {exc}")
 
-        if episode is None and "rss" in feeds:
-            try:
-                episode = fetch_rss_episode(
-                    show_name, feeds["rss"], session
-                )
-            except Exception as exc:
-                errors.append(f"RSS: {exc}")
+            if episode is None and "rss" in feeds:
+                try:
+                    episode = fetch_rss_episode(
+                        show_name, feeds["rss"], session
+                    )
+                except Exception as exc:
+                    errors.append(f"RSS: {exc}")
 
         if episode:
             lines.extend([
