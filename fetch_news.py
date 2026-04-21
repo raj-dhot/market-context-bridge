@@ -653,15 +653,63 @@ def _find_matching_youtube_entry(entries, rss_title):
     return None, best_score
 
 
+"""Paths that are category/archive indexes, not individual posts."""
+_COMPOUND_ARCHIVE_PATHS = {
+    "/", "/home", "/home/",
+    "/the-compound-and-friends", "/the-compound-and-friends/",
+    "/animal-spirits", "/animal-spirits/",
+    "/ask-the-compound", "/ask-the-compound/",
+    "/talk-your-book", "/talk-your-book/",
+    "/what-are-your-thoughts", "/what-are-your-thoughts/",
+    "/talking-wealth", "/talking-wealth/",
+    "/podcasts", "/podcasts/",
+    "/contact", "/contact/", "/about", "/about/",
+}
+
+# Minimum link-text vs episode-title similarity to accept a search hit.
+_COMPOUND_ANCHOR_MATCH_THRESHOLD = 0.4
+
+
+def _looks_like_archive_page(body):
+    """Return True if the scraped body text appears to list multiple distinct
+    episodes (i.e. it's an archive/index page, not a single post)."""
+    if not body:
+        return False
+    # Count "episode N" or "episode N of" mentions with DIFFERENT numbers.
+    matches = re.findall(r"\bepisode\s+(\d{2,4})\b", body.lower())
+    distinct_numbers = set(matches)
+    if len(distinct_numbers) >= 3:
+        return True
+    # Count distinct show names showing up as "of X,"
+    show_markers = re.findall(
+        r"\bof\s+(the compound and friends|animal spirits|ask the compound|"
+        r"talking wealth|what are your thoughts|talk your book)\b",
+        body.lower(),
+    )
+    if len(set(show_markers)) >= 3:
+        return True
+    return False
+
+
 def _fetch_compound_website_episode(rss_title, session, website_search):
     """Try to locate and scrape the Compound's own episode page.
-    Returns article text or None."""
+
+    Selection logic:
+      1. Run a site search.
+      2. Score each result anchor by similarity of its visible text to the
+         RSS episode title.
+      3. Pick the best-scoring anchor whose path is NOT a category/archive
+         index and whose score clears the threshold.
+      4. Scrape the page and reject it if it looks like a multi-episode list.
+
+    Returns (article_text, url) on success, or None on failure.
+    """
     if not website_search:
         return None
     tokens = _normalize_title(rss_title).split()
     if not tokens:
         return None
-    query = " ".join(tokens[:6])
+    query = " ".join(tokens[:8])
     search_url = website_search.format(query=quote(query))
     try:
         r = session.get(search_url, timeout=REQUEST_TIMEOUT)
@@ -671,27 +719,63 @@ def _fetch_compound_website_episode(rss_title, session, website_search):
         return None
 
     soup = BeautifulSoup(r.content, "html.parser")
-    candidate_url = None
+    best_url = None
+    best_score = 0.0
+    best_anchor_text = ""
+
     for a in soup.find_all("a", href=True):
         href = a["href"]
         if not href.startswith("http"):
             continue
         if "thecompoundnews.com" not in href:
             continue
-        if any(seg in href for seg in ("/tag/", "/category/", "/?s=", "/page/")):
-            continue
-        candidate_url = href
-        break
 
-    if not candidate_url:
-        log("[Compound] no matching episode page found on website")
+        # Reject tag pages, category pages, paginated search, search itself.
+        parsed = urlparse(href)
+        path = parsed.path or "/"
+        if any(
+            seg in href
+            for seg in ("/tag/", "/category/", "/?s=", "/page/", "/author/")
+        ):
+            continue
+        # Reject bare archive/category landing pages.
+        if path.lower() in _COMPOUND_ARCHIVE_PATHS:
+            continue
+        # Reject links with no path depth beyond category (e.g. just a slash).
+        if path.count("/") < 2:
+            continue
+
+        anchor_text = normalize_whitespace(a.get_text(" ", strip=True))
+        if not anchor_text:
+            continue
+
+        score = _title_similarity(rss_title, anchor_text)
+        if score > best_score:
+            best_score = score
+            best_url = href
+            best_anchor_text = anchor_text
+
+    if best_score < _COMPOUND_ANCHOR_MATCH_THRESHOLD or not best_url:
+        log(
+            f"[Compound] no strong anchor match on website "
+            f"(best score={best_score:.2f}, text='{best_anchor_text[:60]}')"
+        )
         return None
 
-    log(f"[Compound] trying episode page: {candidate_url}")
-    body = fetch_article_text(candidate_url)
-    if body and len(body) > 400:
-        return body
-    return None
+    log(
+        f"[Compound] trying episode page (score={best_score:.2f}): "
+        f"{best_url}"
+    )
+    body = fetch_article_text(best_url)
+    if not body or len(body) < 400:
+        log(f"[Compound] episode page body too short ({len(body) if body else 0})")
+        return None
+
+    if _looks_like_archive_page(body):
+        log("[Compound] fetched page looks like an archive/list; rejecting")
+        return None
+
+    return body, best_url
 
 
 def fetch_compound_episode(show_name, feeds, session):
@@ -773,15 +857,16 @@ def fetch_compound_episode(show_name, feeds, session):
             log(f"[Compound] YouTube transcript unavailable ({tr_err})")
 
     # 4. Fall back to Compound's website episode page.
-    website_body = _fetch_compound_website_episode(
+    website_result = _fetch_compound_website_episode(
         rss_title, session, site_search
     )
-    if website_body:
+    if website_result:
+        website_body, website_url = website_result
         log("[Compound] using Compound website episode page")
         return {
             "title": rss_title,
             "published": rss_published,
-            "url": yt_link or rss_link,
+            "url": website_url,
             "data_type": "Compound website episode page",
             "content": clean_social_noise(website_body),
         }
