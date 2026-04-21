@@ -1,8 +1,6 @@
 import datetime as dt
 import html
-import os
 import re
-import sys
 import time
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -26,14 +24,8 @@ PODCAST_FEEDS = {
     "Rational Reminder (Canada Investing)": {
         "rss": "https://rationalreminder.libsyn.com/rss",
     },
-    # The Compound uses a dedicated pipeline (see fetch_compound_episode).
-    # Primary path: construct the episode permalink from the RSS title and
-    # fetch it directly. URL pattern verified:
-    #   https://podcasts.thecompoundnews.com/show/TCAF/{wp-slug}/
     "The Compound & Friends (US Retail Sentiment)": {
-        "handler": "compound",
         "rss": "https://feeds.megaphone.fm/TCP4771071679",
-        "episode_base": "https://podcasts.thecompoundnews.com/show/TCAF/",
     },
 }
 
@@ -64,29 +56,6 @@ YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
 
 # Delay between news RSS fetches (be polite)
 NEWS_FETCH_DELAY = 2
-
-# On GitHub Actions (and most cloud/CI IPs), YouTube aggressively blocks
-# transcript requests. Detect that context so we can skip the doomed attempt
-# and go straight to higher-yield fallbacks. The user can also force-skip
-# with SKIP_YOUTUBE_TRANSCRIPTS=1 (or force-try with =0).
-_env_override = os.environ.get("SKIP_YOUTUBE_TRANSCRIPTS", "").strip()
-if _env_override in ("1", "true", "yes"):
-    SKIP_YOUTUBE_TRANSCRIPTS = True
-elif _env_override in ("0", "false", "no"):
-    SKIP_YOUTUBE_TRANSCRIPTS = False
-else:
-    SKIP_YOUTUBE_TRANSCRIPTS = bool(
-        os.environ.get("GITHUB_ACTIONS")
-        or os.environ.get("CI")
-    )
-
-# ── LOGGING ───────────────────────────────────────────────────────────────────
-
-
-def log(msg):
-    """Write a diagnostic line to stderr so it's visible in run logs."""
-    print(f"[fetch_news] {msg}", file=sys.stderr)
-
 
 # ── TEXT HELPERS ───────────────────────────────────────────────────────────────
 
@@ -296,49 +265,39 @@ def is_youtube_short(entry):
 
 
 def fetch_youtube_transcript(url_or_id):
-    """Fetch a YouTube transcript. Returns (text, error_reason).
-    text is None on failure; error_reason is a short string for diagnostics.
-    """
-    if SKIP_YOUTUBE_TRANSCRIPTS:
-        return None, "skipped_ci_env"
-
     video_id = extract_youtube_video_id(url_or_id)
     if not video_id:
-        return None, "invalid_video_id"
+        return None
 
     chunks = []
-    last_error = None
 
+    # Try the newer .fetch() API first
     try:
         api = YouTubeTranscriptApi()
-        transcript = api.fetch(video_id, languages=("en", "en-US", "en-GB"))
-        for snippet in transcript:
-            text = getattr(snippet, "text", None)
-            if text is None and isinstance(snippet, dict):
-                text = snippet.get("text")
-            if text:
-                chunks.append(text)
-    except Exception as exc:
-        last_error = f"{type(exc).__name__}: {str(exc)[:180]}"
+        if hasattr(api, "fetch"):
+            transcript = api.fetch(video_id)
+            for entry in transcript:
+                text = getattr(entry, "text", None)
+                if text is None and isinstance(entry, dict):
+                    text = entry.get("text")
+                if text:
+                    chunks.append(text)
+    except Exception:
+        chunks = []
 
-    # Legacy fallback, only if the method still exists in the installed version.
-    if not chunks and hasattr(YouTubeTranscriptApi, "get_transcript"):
+    # Fallback to legacy .get_transcript()
+    if not chunks:
         try:
             transcript = YouTubeTranscriptApi.get_transcript(video_id)
             for entry in transcript:
-                text = entry.get("text") if isinstance(entry, dict) else None
+                text = entry.get("text")
                 if text:
                     chunks.append(text)
-        except Exception as exc:
-            last_error = f"{type(exc).__name__}: {str(exc)[:180]}"
-
-    if not chunks:
-        return None, last_error or "no_snippets"
+        except Exception:
+            return None
 
     cleaned = clean_social_noise(" ".join(chunks))
-    if not cleaned:
-        return None, "empty_after_cleaning"
-    return cleaned, None
+    return cleaned or None
 
 
 def fetch_article_text(url):
@@ -418,17 +377,17 @@ def fetch_bing_news_rss(query, session, max_items=8):
     Returns a list of dicts with keys: title, url, source, published.
     """
     feed_url = BING_NEWS_RSS_BASE.format(query=quote(query))
-    log(f"Bing News fetching: {feed_url}")
+    print(f"  [Bing News] Fetching: {feed_url}")
     try:
         resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
     except Exception as exc:
-        log(f"Bing News RSS fetch failed for '{query}': {exc}")
+        print(f"  [Bing News] RSS fetch failed for '{query}': {exc}")
         return []
 
     soup = BeautifulSoup(resp.content, "xml")
     items = soup.find_all("item")
-    log(f"Bing News found {len(items)} items for '{query}'")
+    print(f"  [Bing News] Found {len(items)} items for '{query}'")
     results = []
 
     for item in items[:max_items]:
@@ -496,20 +455,20 @@ def build_news_section():
                 source = result["source"]
 
                 if published and not is_recent(published):
-                    log(f"Skip (not recent): {title[:60]}")
+                    print(f"  [Skip] Not recent: {title[:60]}")
                     continue
 
                 if url in seen_urls:
                     continue
                 seen_urls.add(url)
-                log(f"Fetching: {url[:80]}")
+                print(f"  [Fetching] {url[:80]}")
 
                 # Fetch article body via trafilatura
                 body = fetch_article_text(url)
                 body_len = len(body) if body else 0
                 if not body or body_len < NEWS_BODY_MIN_LENGTH:
-                    log(
-                        f"Skip (body too short, {body_len} chars): "
+                    print(
+                        f"  [Skip] Body too short ({body_len} chars): "
                         f"{title[:60]}"
                     )
                     continue
@@ -570,12 +529,11 @@ def fetch_youtube_episode(show_name, feed_url, session):
         chosen, "published", "updated"
     ) or "Unknown"
 
-    transcript, tr_err = fetch_youtube_transcript(link)
+    transcript = fetch_youtube_transcript(link)
     if transcript:
         data_type = "Transcript"
         content = transcript
     else:
-        log(f"[{show_name}] YouTube transcript failed ({tr_err}); using description")
         desc = find_first_tag(
             chosen, "media:description", "description", "summary"
         )
@@ -632,169 +590,6 @@ def fetch_rss_episode(show_name, feed_url, session):
     }
 
 
-# ── COMPOUND-SPECIFIC PIPELINE ────────────────────────────────────────────────
-
-
-def _normalize_title(title):
-    """Lowercased, punctuation-stripped title for loose matching."""
-    cleaned = re.sub(r"[^\w\s]", " ", (title or "").lower())
-    return normalize_whitespace(cleaned)
-
-
-def _title_similarity(a, b):
-    """Jaccard similarity over token sets. 0.0 to 1.0."""
-    ta = set(_normalize_title(a).split())
-    tb = set(_normalize_title(b).split())
-    stop = {"the", "a", "an", "with", "and", "of", "on", "in", "to", "is",
-            "for", "episode", "ep", "ft", "feat"}
-    ta -= stop
-    tb -= stop
-    if not ta or not tb:
-        return 0.0
-    return len(ta & tb) / len(ta | tb)
-
-
-def _looks_like_archive_page(body):
-    """Return True if the scraped body text appears to list multiple distinct
-    episodes (i.e. it's an archive/index page, not a single post)."""
-    if not body:
-        return False
-    # Count "episode N" or "episode N of" mentions with DIFFERENT numbers.
-    matches = re.findall(r"\bepisode\s+(\d{2,4})\b", body.lower())
-    distinct_numbers = set(matches)
-    if len(distinct_numbers) >= 3:
-        return True
-    # Count distinct show names showing up as "of X,"
-    show_markers = re.findall(
-        r"\bof\s+(the compound and friends|animal spirits|ask the compound|"
-        r"talking wealth|what are your thoughts|talk your book)\b",
-        body.lower(),
-    )
-    if len(set(show_markers)) >= 3:
-        return True
-    return False
-
-
-def _wp_slugify(title):
-    """Approximate WordPress's default sanitize_title slug rules."""
-    s = (title or "").lower()
-    s = s.replace("&", "and")
-    # Strip apostrophes entirely (WP removes, not replaces)
-    s = re.sub(r"[\u2019']", "", s)
-    # Everything else non-alphanumeric becomes a hyphen
-    s = re.sub(r"[^a-z0-9]+", "-", s)
-    s = re.sub(r"-+", "-", s).strip("-")
-    return s
-
-
-def _fetch_compound_page(url, session):
-    """Fetch a Compound episode page and return the article body on success.
-
-    Returns the cleaned article text (str) or None. Does its own HTTP so we
-    can distinguish a 404 (slug guess was wrong) from an empty page.
-    """
-    try:
-        r = session.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
-    except Exception as exc:
-        log(f"[Compound] episode page request failed ({url}): {exc}")
-        return None
-
-    if r.status_code != 200:
-        log(f"[Compound] episode page returned {r.status_code}: {url}")
-        return None
-
-    try:
-        extracted = trafilatura.extract(
-            r.text, include_comments=False, include_links=False
-        )
-    except Exception as exc:
-        log(f"[Compound] trafilatura extract failed: {exc}")
-        return None
-
-    body = normalize_whitespace(extracted or "")
-    if not body or len(body) < 400:
-        log(f"[Compound] episode page body too short ({len(body)} chars): {url}")
-        return None
-
-    if _looks_like_archive_page(body):
-        log(f"[Compound] episode page looks like an archive/list; rejecting: {url}")
-        return None
-
-    return body
-
-
-def fetch_compound_episode(show_name, feeds, session):
-    """Dedicated pipeline for The Compound & Friends.
-
-    Strategy (simplified after verifying the canonical URL pattern):
-      1. Pull latest episode metadata from the podcast RSS (title, pub date).
-      2. Construct the episode permalink from the slugified title and fetch
-         it directly. Pattern:
-           https://podcasts.thecompoundnews.com/show/TCAF/{slug}/
-      3. Fall back to RSS show notes if the permalink misses.
-
-    Logs which path succeeded.
-    """
-    rss_url = feeds.get("rss")
-    episode_base = feeds.get("episode_base")
-
-    # 1. Load RSS for title + publish date + canonical URL.
-    rss_title = "Unknown episode"
-    rss_link = "Unavailable"
-    rss_published = "Unknown"
-    rss_item = None
-    if rss_url:
-        try:
-            r = session.get(rss_url, timeout=REQUEST_TIMEOUT)
-            r.raise_for_status()
-            rss_soup = BeautifulSoup(r.content, "xml")
-            rss_item = rss_soup.find("item")
-            if rss_item is not None:
-                rss_title = extract_tag_text(rss_item, "title") or rss_title
-                rss_link = extract_item_link(rss_item) or rss_link
-                rss_published = extract_tag_text(
-                    rss_item, "pubDate", "published", "updated", "dc:date"
-                ) or rss_published
-        except Exception as exc:
-            log(f"[Compound] RSS load failed: {exc}")
-
-    # 2. Construct and fetch the episode permalink.
-    if episode_base and rss_title and rss_title != "Unknown episode":
-        slug = _wp_slugify(rss_title)
-        if slug:
-            episode_url = episode_base.rstrip("/") + "/" + slug + "/"
-            log(f"[Compound] trying episode permalink: {episode_url}")
-            body = _fetch_compound_page(episode_url, session)
-            if body:
-                log("[Compound] using episode permalink page")
-                return {
-                    "title": rss_title,
-                    "published": rss_published,
-                    "url": episode_url,
-                    "data_type": "Compound episode page",
-                    "content": clean_social_noise(body),
-                }
-
-    # 3. Last resort: RSS show notes.
-    if rss_item is not None:
-        notes = extract_episode_notes(rss_item)
-        log("[Compound] falling back to RSS show notes")
-        return {
-            "title": rss_title,
-            "published": rss_published,
-            "url": rss_link,
-            "data_type": "Show notes (fallback)",
-            "content": notes,
-        }
-
-    raise RuntimeError(
-        "Compound handler: RSS feed unavailable and no episode page"
-    )
-
-
-# ── DISPATCH ──────────────────────────────────────────────────────────────────
-
-
 def build_podcast_section(session):
     lines = ["### SOCIAL & PODCAST INTELLIGENCE ###"]
 
@@ -802,28 +597,21 @@ def build_podcast_section(session):
         episode = None
         errors = []
 
-        # Custom handlers get routed first.
-        if feeds.get("handler") == "compound":
+        if "youtube" in feeds:
             try:
-                episode = fetch_compound_episode(show_name, feeds, session)
+                episode = fetch_youtube_episode(
+                    show_name, feeds["youtube"], session
+                )
             except Exception as exc:
-                errors.append(f"Compound handler: {exc}")
-        else:
-            if "youtube" in feeds:
-                try:
-                    episode = fetch_youtube_episode(
-                        show_name, feeds["youtube"], session
-                    )
-                except Exception as exc:
-                    errors.append(f"YouTube: {exc}")
+                errors.append(f"YouTube: {exc}")
 
-            if episode is None and "rss" in feeds:
-                try:
-                    episode = fetch_rss_episode(
-                        show_name, feeds["rss"], session
-                    )
-                except Exception as exc:
-                    errors.append(f"RSS: {exc}")
+        if episode is None and "rss" in feeds:
+            try:
+                episode = fetch_rss_episode(
+                    show_name, feeds["rss"], session
+                )
+            except Exception as exc:
+                errors.append(f"RSS: {exc}")
 
         if episode:
             lines.extend([
