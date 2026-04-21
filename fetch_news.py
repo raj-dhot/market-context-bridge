@@ -27,11 +27,13 @@ PODCAST_FEEDS = {
         "rss": "https://rationalreminder.libsyn.com/rss",
     },
     # The Compound uses a dedicated pipeline (see fetch_compound_episode).
+    # Primary path: construct the episode permalink from the RSS title and
+    # fetch it directly. URL pattern verified:
+    #   https://podcasts.thecompoundnews.com/show/TCAF/{wp-slug}/
     "The Compound & Friends (US Retail Sentiment)": {
         "handler": "compound",
-        "youtube": "https://www.youtube.com/feeds/videos.xml?channel_id=UCMExRegvFqOy9PSHcnMbsTQ",
         "rss": "https://feeds.megaphone.fm/TCP4771071679",
-        "website_search": "https://thecompoundnews.com/?s={query}",
+        "episode_base": "https://podcasts.thecompoundnews.com/show/TCAF/",
     },
 }
 
@@ -643,7 +645,6 @@ def _title_similarity(a, b):
     """Jaccard similarity over token sets. 0.0 to 1.0."""
     ta = set(_normalize_title(a).split())
     tb = set(_normalize_title(b).split())
-    # Drop very common filler tokens that wouldn't disambiguate.
     stop = {"the", "a", "an", "with", "and", "of", "on", "in", "to", "is",
             "for", "episode", "ep", "ft", "feat"}
     ta -= stop
@@ -651,42 +652,6 @@ def _title_similarity(a, b):
     if not ta or not tb:
         return 0.0
     return len(ta & tb) / len(ta | tb)
-
-
-def _find_matching_youtube_entry(entries, rss_title):
-    """Given YouTube feed <entry>s and an RSS episode title, return the
-    best-matching entry (non-Short), or None."""
-    best = None
-    best_score = 0.0
-    for entry in entries:
-        if is_youtube_short(entry):
-            continue
-        yt_title = extract_tag_text(entry, "title")
-        score = _title_similarity(rss_title, yt_title)
-        if score > best_score:
-            best = entry
-            best_score = score
-    # Require a reasonable overlap before trusting the match.
-    if best_score >= 0.4:
-        return best, best_score
-    return None, best_score
-
-
-"""Paths that are category/archive indexes, not individual posts."""
-_COMPOUND_ARCHIVE_PATHS = {
-    "/", "/home", "/home/",
-    "/the-compound-and-friends", "/the-compound-and-friends/",
-    "/animal-spirits", "/animal-spirits/",
-    "/ask-the-compound", "/ask-the-compound/",
-    "/talk-your-book", "/talk-your-book/",
-    "/what-are-your-thoughts", "/what-are-your-thoughts/",
-    "/talking-wealth", "/talking-wealth/",
-    "/podcasts", "/podcasts/",
-    "/contact", "/contact/", "/about", "/about/",
-}
-
-# Minimum link-text vs episode-title similarity to accept a search hit.
-_COMPOUND_ANCHOR_MATCH_THRESHOLD = 0.4
 
 
 def _looks_like_archive_page(body):
@@ -722,22 +687,22 @@ def _wp_slugify(title):
     return s
 
 
-def _try_compound_direct_url(slug, session):
-    """Try the direct Compound permalink. Returns (body, url) or None.
-    Uses requests.get so we can distinguish 200 from 404.
+def _fetch_compound_page(url, session):
+    """Fetch a Compound episode page and return the article body on success.
+
+    Returns the cleaned article text (str) or None. Does its own HTTP so we
+    can distinguish a 404 (slug guess was wrong) from an empty page.
     """
-    url = f"https://thecompoundnews.com/the-compound-and-friends/{slug}/"
     try:
         r = session.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
     except Exception as exc:
-        log(f"[Compound] direct URL request failed ({url}): {exc}")
+        log(f"[Compound] episode page request failed ({url}): {exc}")
         return None
 
     if r.status_code != 200:
-        log(f"[Compound] direct URL returned {r.status_code}: {url}")
+        log(f"[Compound] episode page returned {r.status_code}: {url}")
         return None
 
-    # Extract main article text from the fetched HTML using trafilatura.
     try:
         extracted = trafilatura.extract(
             r.text, include_comments=False, include_links=False
@@ -748,129 +713,30 @@ def _try_compound_direct_url(slug, session):
 
     body = normalize_whitespace(extracted or "")
     if not body or len(body) < 400:
-        log(
-            f"[Compound] direct URL body too short "
-            f"({len(body)} chars): {url}"
-        )
+        log(f"[Compound] episode page body too short ({len(body)} chars): {url}")
         return None
 
     if _looks_like_archive_page(body):
-        log(f"[Compound] direct URL returned archive-like page; rejecting: {url}")
+        log(f"[Compound] episode page looks like an archive/list; rejecting: {url}")
         return None
 
-    # Final sanity: the body should mention something close to the title
-    # that drove the slug. Skip this check if title is very short.
-    return body, r.url  # use final URL after redirects
-
-
-def _fetch_compound_website_episode(rss_title, session, website_search):
-    """Try to locate and scrape the Compound's own episode page.
-
-    Strategy:
-      1. Construct the likely permalink from the title and try it directly.
-      2. If that 404s or looks wrong, fall back to WordPress site search
-         with anchor-text scoring.
-
-    Returns (article_text, url) on success, or None on failure.
-    """
-    # ---- Path 1: direct slug URL ----------------------------------------
-    slug = _wp_slugify(rss_title)
-    if slug:
-        log(f"[Compound] trying direct permalink for slug: {slug}")
-        direct = _try_compound_direct_url(slug, session)
-        if direct:
-            log(f"[Compound] direct permalink succeeded: {direct[1]}")
-            return direct
-
-    # ---- Path 2: WordPress search ---------------------------------------
-    if not website_search:
-        return None
-    tokens = _normalize_title(rss_title).split()
-    if not tokens:
-        return None
-    query = " ".join(tokens[:8])
-    search_url = website_search.format(query=quote(query))
-    try:
-        r = session.get(search_url, timeout=REQUEST_TIMEOUT)
-        r.raise_for_status()
-    except Exception as exc:
-        log(f"[Compound] website search failed: {exc}")
-        return None
-
-    soup = BeautifulSoup(r.content, "html.parser")
-    best_url = None
-    best_score = 0.0
-    best_anchor_text = ""
-
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if not href.startswith("http"):
-            continue
-        if "thecompoundnews.com" not in href:
-            continue
-
-        # Reject tag pages, category pages, paginated search, search itself.
-        parsed = urlparse(href)
-        path = parsed.path or "/"
-        if any(
-            seg in href
-            for seg in ("/tag/", "/category/", "/?s=", "/page/", "/author/")
-        ):
-            continue
-        # Reject bare archive/category landing pages.
-        if path.lower() in _COMPOUND_ARCHIVE_PATHS:
-            continue
-        # Reject links with no path depth beyond category (e.g. just a slash).
-        if path.count("/") < 2:
-            continue
-
-        anchor_text = normalize_whitespace(a.get_text(" ", strip=True))
-        if not anchor_text:
-            continue
-
-        score = _title_similarity(rss_title, anchor_text)
-        if score > best_score:
-            best_score = score
-            best_url = href
-            best_anchor_text = anchor_text
-
-    if best_score < _COMPOUND_ANCHOR_MATCH_THRESHOLD or not best_url:
-        log(
-            f"[Compound] no strong anchor match on website "
-            f"(best score={best_score:.2f}, text='{best_anchor_text[:60]}')"
-        )
-        return None
-
-    log(
-        f"[Compound] trying search-result page (score={best_score:.2f}): "
-        f"{best_url}"
-    )
-    body = fetch_article_text(best_url)
-    if not body or len(body) < 400:
-        log(f"[Compound] search-result page body too short ({len(body) if body else 0})")
-        return None
-
-    if _looks_like_archive_page(body):
-        log("[Compound] search-result page looks like an archive/list; rejecting")
-        return None
-
-    return body, best_url
+    return body
 
 
 def fetch_compound_episode(show_name, feeds, session):
     """Dedicated pipeline for The Compound & Friends.
 
-    Strategy:
+    Strategy (simplified after verifying the canonical URL pattern):
       1. Pull latest episode metadata from the podcast RSS (title, pub date).
-      2. Fetch the YouTube channel feed; match the latest RSS episode by title.
-      3. Try to fetch the YouTube transcript for that matched video.
-      4. If transcript fails, scrape the show's website episode page.
-      5. Fall back to RSS show notes only as a last resort.
-    Always reports in the log which path succeeded.
+      2. Construct the episode permalink from the slugified title and fetch
+         it directly. Pattern:
+           https://podcasts.thecompoundnews.com/show/TCAF/{slug}/
+      3. Fall back to RSS show notes if the permalink misses.
+
+    Logs which path succeeded.
     """
     rss_url = feeds.get("rss")
-    yt_url = feeds.get("youtube")
-    site_search = feeds.get("website_search")
+    episode_base = feeds.get("episode_base")
 
     # 1. Load RSS for title + publish date + canonical URL.
     rss_title = "Unknown episode"
@@ -892,79 +758,37 @@ def fetch_compound_episode(show_name, feeds, session):
         except Exception as exc:
             log(f"[Compound] RSS load failed: {exc}")
 
-    # 2. Load YouTube feed and match by title.
-    yt_link = None
-    yt_title = None
-    match_score = 0.0
-    if yt_url:
-        try:
-            r = session.get(yt_url, timeout=REQUEST_TIMEOUT)
-            r.raise_for_status()
-            yt_soup = BeautifulSoup(r.content, "xml")
-            entries = yt_soup.find_all("entry")
-            match, match_score = _find_matching_youtube_entry(
-                entries, rss_title
-            )
-            if match is not None:
-                yt_title = extract_tag_text(match, "title")
-                yt_link = extract_item_link(match)
-                log(
-                    f"[Compound] matched YouTube video (score={match_score:.2f}): "
-                    f"{(yt_title or '')[:70]}"
-                )
-            else:
-                log(
-                    f"[Compound] no YouTube title match for '{rss_title[:60]}' "
-                    f"(best score={match_score:.2f})"
-                )
-        except Exception as exc:
-            log(f"[Compound] YouTube feed load failed: {exc}")
+    # 2. Construct and fetch the episode permalink.
+    if episode_base and rss_title and rss_title != "Unknown episode":
+        slug = _wp_slugify(rss_title)
+        if slug:
+            episode_url = episode_base.rstrip("/") + "/" + slug + "/"
+            log(f"[Compound] trying episode permalink: {episode_url}")
+            body = _fetch_compound_page(episode_url, session)
+            if body:
+                log("[Compound] using episode permalink page")
+                return {
+                    "title": rss_title,
+                    "published": rss_published,
+                    "url": episode_url,
+                    "data_type": "Compound episode page",
+                    "content": clean_social_noise(body),
+                }
 
-    # 3. Try YouTube transcript on the matched video.
-    if yt_link:
-        transcript, tr_err = fetch_youtube_transcript(yt_link)
-        if transcript:
-            log("[Compound] using YouTube transcript")
-            return {
-                "title": rss_title,
-                "published": rss_published,
-                "url": yt_link,
-                "data_type": "YouTube transcript",
-                "content": transcript,
-            }
-        else:
-            log(f"[Compound] YouTube transcript unavailable ({tr_err})")
-
-    # 4. Fall back to Compound's website episode page.
-    website_result = _fetch_compound_website_episode(
-        rss_title, session, site_search
-    )
-    if website_result:
-        website_body, website_url = website_result
-        log("[Compound] using Compound website episode page")
-        return {
-            "title": rss_title,
-            "published": rss_published,
-            "url": website_url,
-            "data_type": "Compound website episode page",
-            "content": clean_social_noise(website_body),
-        }
-
-    # 5. Last resort: RSS show notes.
+    # 3. Last resort: RSS show notes.
     if rss_item is not None:
         notes = extract_episode_notes(rss_item)
         log("[Compound] falling back to RSS show notes")
         return {
             "title": rss_title,
             "published": rss_published,
-            "url": yt_link or rss_link,
+            "url": rss_link,
             "data_type": "Show notes (fallback)",
             "content": notes,
         }
 
     raise RuntimeError(
-        "All Compound sources failed: no RSS item, no YouTube match, "
-        "no website page"
+        "Compound handler: RSS feed unavailable and no episode page"
     )
 
 
