@@ -1,5 +1,6 @@
 import datetime as dt
 import html
+import os
 import re
 import sys
 import time
@@ -61,6 +62,21 @@ YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
 
 # Delay between news RSS fetches (be polite)
 NEWS_FETCH_DELAY = 2
+
+# On GitHub Actions (and most cloud/CI IPs), YouTube aggressively blocks
+# transcript requests. Detect that context so we can skip the doomed attempt
+# and go straight to higher-yield fallbacks. The user can also force-skip
+# with SKIP_YOUTUBE_TRANSCRIPTS=1 (or force-try with =0).
+_env_override = os.environ.get("SKIP_YOUTUBE_TRANSCRIPTS", "").strip()
+if _env_override in ("1", "true", "yes"):
+    SKIP_YOUTUBE_TRANSCRIPTS = True
+elif _env_override in ("0", "false", "no"):
+    SKIP_YOUTUBE_TRANSCRIPTS = False
+else:
+    SKIP_YOUTUBE_TRANSCRIPTS = bool(
+        os.environ.get("GITHUB_ACTIONS")
+        or os.environ.get("CI")
+    )
 
 # ── LOGGING ───────────────────────────────────────────────────────────────────
 
@@ -281,6 +297,9 @@ def fetch_youtube_transcript(url_or_id):
     """Fetch a YouTube transcript. Returns (text, error_reason).
     text is None on failure; error_reason is a short string for diagnostics.
     """
+    if SKIP_YOUTUBE_TRANSCRIPTS:
+        return None, "skipped_ci_env"
+
     video_id = extract_youtube_video_id(url_or_id)
     if not video_id:
         return None, "invalid_video_id"
@@ -691,19 +710,79 @@ def _looks_like_archive_page(body):
     return False
 
 
+def _wp_slugify(title):
+    """Approximate WordPress's default sanitize_title slug rules."""
+    s = (title or "").lower()
+    s = s.replace("&", "and")
+    # Strip apostrophes entirely (WP removes, not replaces)
+    s = re.sub(r"[\u2019']", "", s)
+    # Everything else non-alphanumeric becomes a hyphen
+    s = re.sub(r"[^a-z0-9]+", "-", s)
+    s = re.sub(r"-+", "-", s).strip("-")
+    return s
+
+
+def _try_compound_direct_url(slug, session):
+    """Try the direct Compound permalink. Returns (body, url) or None.
+    Uses requests.get so we can distinguish 200 from 404.
+    """
+    url = f"https://thecompoundnews.com/the-compound-and-friends/{slug}/"
+    try:
+        r = session.get(url, timeout=REQUEST_TIMEOUT, allow_redirects=True)
+    except Exception as exc:
+        log(f"[Compound] direct URL request failed ({url}): {exc}")
+        return None
+
+    if r.status_code != 200:
+        log(f"[Compound] direct URL returned {r.status_code}: {url}")
+        return None
+
+    # Extract main article text from the fetched HTML using trafilatura.
+    try:
+        extracted = trafilatura.extract(
+            r.text, include_comments=False, include_links=False
+        )
+    except Exception as exc:
+        log(f"[Compound] trafilatura extract failed: {exc}")
+        return None
+
+    body = normalize_whitespace(extracted or "")
+    if not body or len(body) < 400:
+        log(
+            f"[Compound] direct URL body too short "
+            f"({len(body)} chars): {url}"
+        )
+        return None
+
+    if _looks_like_archive_page(body):
+        log(f"[Compound] direct URL returned archive-like page; rejecting: {url}")
+        return None
+
+    # Final sanity: the body should mention something close to the title
+    # that drove the slug. Skip this check if title is very short.
+    return body, r.url  # use final URL after redirects
+
+
 def _fetch_compound_website_episode(rss_title, session, website_search):
     """Try to locate and scrape the Compound's own episode page.
 
-    Selection logic:
-      1. Run a site search.
-      2. Score each result anchor by similarity of its visible text to the
-         RSS episode title.
-      3. Pick the best-scoring anchor whose path is NOT a category/archive
-         index and whose score clears the threshold.
-      4. Scrape the page and reject it if it looks like a multi-episode list.
+    Strategy:
+      1. Construct the likely permalink from the title and try it directly.
+      2. If that 404s or looks wrong, fall back to WordPress site search
+         with anchor-text scoring.
 
     Returns (article_text, url) on success, or None on failure.
     """
+    # ---- Path 1: direct slug URL ----------------------------------------
+    slug = _wp_slugify(rss_title)
+    if slug:
+        log(f"[Compound] trying direct permalink for slug: {slug}")
+        direct = _try_compound_direct_url(slug, session)
+        if direct:
+            log(f"[Compound] direct permalink succeeded: {direct[1]}")
+            return direct
+
+    # ---- Path 2: WordPress search ---------------------------------------
     if not website_search:
         return None
     tokens = _normalize_title(rss_title).split()
@@ -763,16 +842,16 @@ def _fetch_compound_website_episode(rss_title, session, website_search):
         return None
 
     log(
-        f"[Compound] trying episode page (score={best_score:.2f}): "
+        f"[Compound] trying search-result page (score={best_score:.2f}): "
         f"{best_url}"
     )
     body = fetch_article_text(best_url)
     if not body or len(body) < 400:
-        log(f"[Compound] episode page body too short ({len(body) if body else 0})")
+        log(f"[Compound] search-result page body too short ({len(body) if body else 0})")
         return None
 
     if _looks_like_archive_page(body):
-        log("[Compound] fetched page looks like an archive/list; rejecting")
+        log("[Compound] search-result page looks like an archive/list; rejecting")
         return None
 
     return body, best_url
