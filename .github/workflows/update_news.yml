@@ -36,24 +36,17 @@ jobs:
 
       - name: Checkout Repo
         if: steps.gate.outputs.run == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6   # node24 (was v4 / node20, deprecated)
         with:
           ref: ${{ github.event.repository.default_branch }}
 
-      - name: Set up Python
+      - name: Set up Python (with built-in pip cache)
         if: steps.gate.outputs.run == 'true'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6   # node24 (was v5 / node20, deprecated)
         with:
           python-version: '3.11'
-
-      - name: Cache pip dependencies
-        if: steps.gate.outputs.run == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+          cache: 'pip'                  # replaces the separate actions/cache step
+          cache-dependency-path: requirements.txt
 
       - name: Install Libraries
         if: steps.gate.outputs.run == 'true'
