@@ -1,5 +1,6 @@
 import datetime as dt
 import html
+import json
 import re
 import time
 from email.utils import parsedate_to_datetime
@@ -57,8 +58,12 @@ NEWS_BODY_MAX_CHARS = 2000
 
 # Podcasts: collect every qualifying episode from the past month,
 # capped per show so the report stays a manageable size.
+# Tiered detail: the MOST RECENT episode of each show gets the full
+# transcript (huge cap); older episodes in the window get a short
+# summary from show notes / the feed description only.
 MAX_EPISODES_PER_SHOW = 6
-EPISODE_TEXT_MAX_CHARS = 3000
+LATEST_TRANSCRIPT_MAX_CHARS = 100_000   # effectively "full" for a ~90 min show
+OLDER_EPISODE_MAX_CHARS = 1_500         # show-notes summary for older episodes
 
 OUTPUT_FILE = Path("latest_news.txt")
 YOUTUBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
@@ -223,6 +228,16 @@ def find_first_tag(parent, *names):
             if tag_name and tag_name.split(":")[-1].lower() in wanted:
                 return tag
     return None
+
+
+def find_all_tags(parent, *names):
+    wanted = {name.split(":")[-1].lower() for name in names}
+    matches = []
+    for tag in parent.find_all():
+        tag_name = getattr(tag, "name", None)
+        if tag_name and tag_name.split(":")[-1].lower() in wanted:
+            matches.append(tag)
+    return matches
 
 
 def extract_tag_text(parent, *names):
@@ -527,17 +542,109 @@ def build_news_section():
 
 # ── PODCAST SECTION ───────────────────────────────────────────────────────────
 
+SRT_VTT_TIMESTAMP = re.compile(
+    r"^\s*(?:\d+\s*$|(?:\d{1,2}:)?\d{2}:\d{2}[.,]\d{3}\s*-->.*$|WEBVTT.*$"
+    r"|NOTE\b.*$|STYLE\b.*$|REGION\b.*$)",
+    re.MULTILINE,
+)
+VTT_INLINE_TAG = re.compile(r"</?[a-zA-Z][^>]*>")
 
-def parse_youtube_episode(entry):
-    """Turn a YouTube Atom <entry> into an episode dict (with transcript)."""
+
+def parse_transcript_payload(text, mime_type):
+    """Convert a Podcasting 2.0 transcript payload to plain text.
+
+    Handles text/plain, text/html, SRT, VTT, and the JSON segment format.
+    """
+    mime = (mime_type or "").lower()
+    stripped = (text or "").lstrip()
+
+    if "json" in mime or stripped.startswith(("{", "[")):
+        try:
+            data = json.loads(text)
+            if isinstance(data, dict):
+                segments = data.get("segments") or []
+            elif isinstance(data, list):
+                segments = data
+            else:
+                segments = []
+            parts = [
+                seg.get("body", "")
+                for seg in segments
+                if isinstance(seg, dict) and seg.get("body")
+            ]
+            if parts:
+                return " ".join(parts)
+        except (ValueError, TypeError):
+            pass  # fall through and treat as text
+
+    if "html" in mime or stripped.startswith("<"):
+        return html_to_text(text)
+
+    # SRT / VTT / plain text: strip cue numbers, timestamps, headers, tags
+    cleaned = SRT_VTT_TIMESTAMP.sub("", text or "")
+    cleaned = VTT_INLINE_TAG.sub("", cleaned)
+    return cleaned
+
+
+def fetch_podcast_transcript(item, session):
+    """Fetch a full transcript via the <podcast:transcript> tag, if present.
+
+    Prefers plain text, then JSON, then SRT/VTT, then HTML. Returns
+    cleaned transcript text or None.
+    """
+    tags = find_all_tags(item, "podcast:transcript", "transcript")
+    if not tags:
+        return None
+
+    type_preference = {
+        "text/plain": 0,
+        "application/json": 1,
+        "application/srt": 2,
+        "application/x-subrip": 2,
+        "text/vtt": 2,
+        "text/html": 3,
+    }
+    tags.sort(
+        key=lambda t: type_preference.get((t.get("type") or "").lower(), 4)
+    )
+
+    for tag in tags:
+        url = tag.get("url")
+        if not url:
+            continue
+        try:
+            resp = session.get(url, timeout=REQUEST_TIMEOUT)
+            resp.raise_for_status()
+        except Exception:
+            continue
+        text = parse_transcript_payload(resp.text, tag.get("type"))
+        cleaned = clean_social_noise(text)
+        # A real transcript should be substantial; tiny payloads are
+        # usually errors or placeholder files.
+        if cleaned and len(cleaned) > 500:
+            return cleaned
+
+    return None
+
+
+def parse_youtube_episode(entry, want_full_transcript):
+    """Turn a YouTube Atom <entry> into an episode dict.
+
+    Latest episode (want_full_transcript=True): fetch the complete
+    transcript. Older episodes: description summary only (fast).
+    """
     title = extract_tag_text(entry, "title") or "Unknown episode"
     link = extract_item_link(entry) or "Unavailable"
     published = extract_tag_text(entry, "published", "updated") or "Unknown"
 
-    transcript = fetch_youtube_transcript(link)
+    transcript = None
+    if want_full_transcript:
+        transcript = fetch_youtube_transcript(link)
+
     if transcript:
-        data_type = "Transcript"
+        data_type = "Full transcript"
         content = transcript
+        max_chars = LATEST_TRANSCRIPT_MAX_CHARS
     else:
         desc = find_first_tag(
             entry, "media:description", "description", "summary"
@@ -547,7 +654,16 @@ def parse_youtube_episode(entry):
             clean_social_noise(raw)
             or "No transcript or description available."
         )
-        data_type = "Show notes"
+        data_type = (
+            "Show notes (transcript unavailable)"
+            if want_full_transcript
+            else "Show notes summary"
+        )
+        max_chars = (
+            LATEST_TRANSCRIPT_MAX_CHARS
+            if want_full_transcript
+            else OLDER_EPISODE_MAX_CHARS
+        )
 
     return {
         "title": title,
@@ -555,17 +671,48 @@ def parse_youtube_episode(entry):
         "url": link,
         "data_type": data_type,
         "content": content,
+        "max_chars": max_chars,
     }
 
 
-def parse_rss_episode(item):
-    """Turn a standard RSS <item> into an episode dict."""
+def parse_rss_episode(item, session, want_full_transcript):
+    """Turn a standard RSS <item> into an episode dict.
+
+    Latest episode (want_full_transcript=True): try, in order,
+      1. <podcast:transcript> tag (Podcasting 2.0 full transcript)
+      2. episode web page (often contains a posted transcript)
+      3. show notes from the feed
+    Older episodes: show notes summary only (fast).
+    """
     title = extract_tag_text(item, "title") or "Unknown episode"
     link = extract_item_link(item) or "Unavailable"
     published = extract_tag_text(
         item, "published", "updated", "pubDate", "dc:date"
     ) or "Unknown"
 
+    if not want_full_transcript:
+        return {
+            "title": title,
+            "published": published,
+            "url": link,
+            "data_type": "Show notes summary",
+            "content": extract_episode_notes(item),
+            "max_chars": OLDER_EPISODE_MAX_CHARS,
+        }
+
+    # 1. Podcasting 2.0 transcript tag
+    transcript = fetch_podcast_transcript(item, session)
+    if transcript:
+        return {
+            "title": title,
+            "published": published,
+            "url": link,
+            "data_type": "Full transcript (podcast:transcript)",
+            "content": transcript,
+            "max_chars": LATEST_TRANSCRIPT_MAX_CHARS,
+        }
+
+    # 2. Episode page (some shows publish the transcript there)
     page_content = None
     if link and link.startswith("http") and not link.endswith(".mp3"):
         page_content = fetch_article_text(link)
@@ -573,18 +720,23 @@ def parse_rss_episode(item):
             page_content = clean_social_noise(page_content)
 
     if page_content and len(page_content) > 200:
-        data_type = "Episode page"
-        content = page_content
-    else:
-        data_type = "Show notes"
-        content = extract_episode_notes(item)
+        return {
+            "title": title,
+            "published": published,
+            "url": link,
+            "data_type": "Episode page (may include transcript)",
+            "content": page_content,
+            "max_chars": LATEST_TRANSCRIPT_MAX_CHARS,
+        }
 
+    # 3. Show notes fallback
     return {
         "title": title,
         "published": published,
         "url": link,
-        "data_type": data_type,
-        "content": content,
+        "data_type": "Show notes (transcript unavailable)",
+        "content": extract_episode_notes(item),
+        "max_chars": LATEST_TRANSCRIPT_MAX_CHARS,
     }
 
 
@@ -611,8 +763,14 @@ def fetch_youtube_episodes(show_name, feed_url, session):
         published = extract_tag_text(entry, "published", "updated")
         if published and not is_recent(published):
             continue
-        print(f"  [{show_name}] Parsing episode published {published}")
-        episodes.append(parse_youtube_episode(entry))
+        # Feeds are newest-first: the first episode we keep is the most
+        # recent one and gets the full transcript; the rest get summaries.
+        want_full = len(episodes) == 0
+        print(
+            f"  [{show_name}] Parsing episode published {published} "
+            f"({'full transcript' if want_full else 'summary'})"
+        )
+        episodes.append(parse_youtube_episode(entry, want_full))
         time.sleep(EPISODE_FETCH_DELAY)
 
     return episodes
@@ -643,8 +801,13 @@ def fetch_rss_episodes(show_name, feed_url, session):
             # Standard podcast RSS feeds are newest-first; once we hit an
             # episode older than the window, everything after it is too.
             break
-        print(f"  [{show_name}] Parsing episode published {published}")
-        episodes.append(parse_rss_episode(item))
+        # First kept episode = most recent = full transcript attempt.
+        want_full = len(episodes) == 0
+        print(
+            f"  [{show_name}] Parsing episode published {published} "
+            f"({'full transcript' if want_full else 'summary'})"
+        )
+        episodes.append(parse_rss_episode(item, session, want_full))
         time.sleep(EPISODE_FETCH_DELAY)
 
     return episodes
@@ -679,7 +842,8 @@ def build_podcast_section(session):
         if episodes:
             lines.append(
                 f"SHOW: {show_name} "
-                f"({len(episodes)} episode(s) in the past month)"
+                f"({len(episodes)} episode(s) in the past month; "
+                "latest = full transcript, older = summary)"
             )
             lines.append("")
             for episode in episodes:
@@ -690,7 +854,7 @@ def build_podcast_section(session):
                     f"DATA_TYPE: {episode['data_type']}",
                     "DATA:",
                     truncate_text(
-                        episode["content"], EPISODE_TEXT_MAX_CHARS
+                        episode["content"], episode["max_chars"]
                     ),
                     "-" * 50,
                     "",
