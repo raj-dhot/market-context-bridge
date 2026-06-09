@@ -1,50 +1,72 @@
-name: Weekly Deep-Dive News Fetcher
- 
+name: Monthly Deep-Dive News Fetcher
+
 on:
   schedule:
-    - cron: '0 13 * * 1'  # 6:00 AM PDT every Monday
-  workflow_dispatch:       # Manual trigger from Actions tab
- 
+    - cron: '0 13 * * 1'  # 6:00 AM PDT every Monday (UTC); gate below limits the real run to the FIRST Monday of each month
+  workflow_dispatch:       # Manual trigger from Actions tab (bypasses the first-Monday gate)
+
 # Prevent overlapping runs
 concurrency:
   group: news-fetcher
   cancel-in-progress: true
- 
+
 jobs:
   fetch-and-push:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30   # raised from 15: monthly run pulls ~15 articles + up to 6 episodes/show
     permissions:
       contents: write
- 
+
     steps:
+      # GitHub cron can't express "first Monday" (day-of-month and
+      # day-of-week are OR'd, not AND'd), so we trigger every Monday
+      # and only proceed when the date falls in days 1-7.
+      # Manual workflow_dispatch runs always proceed.
+      - name: First-Monday gate
+        id: gate
+        run: |
+          DAY=$((10#$(date -u +%d)))
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$DAY" -le 7 ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "First Monday (day $DAY) or manual run - proceeding."
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Day $DAY - not the first Monday. Skipping until next month."
+          fi
+
       - name: Checkout Repo
+        if: steps.gate.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
- 
+
       - name: Set up Python
+        if: steps.gate.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
- 
+
       - name: Cache pip dependencies
+        if: steps.gate.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
- 
+
       - name: Install Libraries
+        if: steps.gate.outputs.run == 'true'
         run: pip install -r requirements.txt
- 
+
       - name: Run Scraper
+        if: steps.gate.outputs.run == 'true'
         run: python fetch_news.py
         env:
           PYTHONUNBUFFERED: "1"
- 
+
       - name: Commit News to Repo
+        if: steps.gate.outputs.run == 'true'
         run: |
           git config --global user.name "Market-Intelligence-Bot"
           git config --global user.email "bot@oceanfront.wealth"
@@ -52,13 +74,14 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "Automated update: Weekly Market Intelligence [$(date +'%Y-%m-%d')]"
+            git commit -m "Automated update: Monthly Market Intelligence [$(date +'%Y-%m-%d')]"
             git push
           fi
- 
+
   # Keeps the workflow alive by preventing GitHub's 60-day inactivity disable.
-  # This job runs on the same schedule but does nothing heavy. As long as the
-  # workflow itself executes, GitHub resets the inactivity timer.
+  # This still runs EVERY Monday (the gate above only affects fetch-and-push),
+  # which is exactly what you want: the workflow executes weekly, resetting
+  # GitHub's inactivity timer, while the heavy fetch only happens monthly.
   keepalive:
     runs-on: ubuntu-latest
     timeout-minutes: 1
