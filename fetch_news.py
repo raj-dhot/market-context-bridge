@@ -42,20 +42,31 @@ HEADERS = {
     )
 }
 
-BING_NEWS_RSS_BASE = "https://www.bing.com/news/search?q={query}&format=rss&count=10"
+BING_NEWS_RSS_BASE = "https://www.bing.com/news/search?q={query}&format=rss&count=20"
 
 REQUEST_TIMEOUT = 20
-NEWS_ITEM_TARGET = 2
-NEWS_LOOKBACK_DAYS = 7
+
+# Rolling-month window: the script runs on the first Monday of each month
+# and reviews everything published in the preceding LOOKBACK_DAYS days.
+LOOKBACK_DAYS = 31
+
+# More articles per category now that the window covers a whole month.
+NEWS_ITEM_TARGET = 5
 NEWS_BODY_MIN_LENGTH = 350
 NEWS_BODY_MAX_CHARS = 2000
-EPISODE_TEXT_MAX_CHARS = 4000
+
+# Podcasts: collect every qualifying episode from the past month,
+# capped per show so the report stays a manageable size.
+MAX_EPISODES_PER_SHOW = 6
+EPISODE_TEXT_MAX_CHARS = 3000
+
 OUTPUT_FILE = Path("latest_news.txt")
 YOUTUBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
 YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
 
-# Delay between news RSS fetches (be polite)
+# Delay between outbound fetches (be polite)
 NEWS_FETCH_DELAY = 2
+EPISODE_FETCH_DELAY = 2
 
 # ── TEXT HELPERS ───────────────────────────────────────────────────────────────
 
@@ -176,7 +187,7 @@ def parse_datetime(value):
     return None
 
 
-def is_recent(value, days=NEWS_LOOKBACK_DAYS):
+def is_recent(value, days=LOOKBACK_DAYS):
     published_at = parse_datetime(value)
     if published_at is None:
         return True
@@ -184,6 +195,12 @@ def is_recent(value, days=NEWS_LOOKBACK_DAYS):
         published_at = published_at.replace(tzinfo=dt.timezone.utc)
     cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
     return published_at >= cutoff
+
+
+def lookback_window_label(days=LOOKBACK_DAYS):
+    end = dt.datetime.now(dt.timezone.utc)
+    start = end - dt.timedelta(days=days)
+    return f"{start.strftime('%Y-%m-%d')} to {end.strftime('%Y-%m-%d')}"
 
 
 # ── XML / RSS HELPERS ─────────────────────────────────────────────────────────
@@ -368,7 +385,7 @@ def extract_episode_notes(item):
 # ── BING NEWS RSS ─────────────────────────────────────────────────────────────
 
 
-def fetch_bing_news_rss(query, session, max_items=8):
+def fetch_bing_news_rss(query, session, max_items=20):
     """Fetch news items from Bing News RSS for the given query.
 
     Bing returns direct article URLs (no encoding or redirect tricks),
@@ -411,6 +428,13 @@ def fetch_bing_news_rss(query, session, max_items=8):
             "published": pub_date,
         })
 
+    # Newest first so the monthly digest leads with fresh coverage but
+    # still reaches back across the full window.
+    results.sort(
+        key=lambda r: parse_datetime(r["published"])
+        or dt.datetime.min.replace(tzinfo=dt.timezone.utc),
+        reverse=True,
+    )
     return results
 
 
@@ -455,7 +479,7 @@ def build_news_section():
                 source = result["source"]
 
                 if published and not is_recent(published):
-                    print(f"  [Skip] Not recent: {title[:60]}")
+                    print(f"  [Skip] Outside monthly window: {title[:60]}")
                     continue
 
                 if url in seen_urls:
@@ -504,30 +528,11 @@ def build_news_section():
 # ── PODCAST SECTION ───────────────────────────────────────────────────────────
 
 
-def fetch_youtube_episode(show_name, feed_url, session):
-    """Fetch the latest *full* episode from a YouTube RSS feed (skip Shorts)."""
-    response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.content, "xml")
-
-    entries = soup.find_all("entry")
-    if not entries:
-        raise ValueError("Feed contained no <entry> nodes")
-
-    chosen = None
-    for entry in entries:
-        if not is_youtube_short(entry):
-            chosen = entry
-            break
-
-    if chosen is None:
-        chosen = entries[0]
-
-    title = extract_tag_text(chosen, "title") or "Unknown episode"
-    link = extract_item_link(chosen) or "Unavailable"
-    published = extract_tag_text(
-        chosen, "published", "updated"
-    ) or "Unknown"
+def parse_youtube_episode(entry):
+    """Turn a YouTube Atom <entry> into an episode dict (with transcript)."""
+    title = extract_tag_text(entry, "title") or "Unknown episode"
+    link = extract_item_link(entry) or "Unavailable"
+    published = extract_tag_text(entry, "published", "updated") or "Unknown"
 
     transcript = fetch_youtube_transcript(link)
     if transcript:
@@ -535,7 +540,7 @@ def fetch_youtube_episode(show_name, feed_url, session):
         content = transcript
     else:
         desc = find_first_tag(
-            chosen, "media:description", "description", "summary"
+            entry, "media:description", "description", "summary"
         )
         raw = desc.get_text(" ", strip=True) if desc else ""
         content = (
@@ -553,15 +558,8 @@ def fetch_youtube_episode(show_name, feed_url, session):
     }
 
 
-def fetch_rss_episode(show_name, feed_url, session):
-    """Fetch the latest episode from a standard RSS feed."""
-    response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.content, "xml")
-    item = soup.find("item")
-    if item is None:
-        raise ValueError("Feed contained no <item> nodes")
-
+def parse_rss_episode(item):
+    """Turn a standard RSS <item> into an episode dict."""
     title = extract_tag_text(item, "title") or "Unknown episode"
     link = extract_item_link(item) or "Unavailable"
     published = extract_tag_text(
@@ -590,45 +588,124 @@ def fetch_rss_episode(show_name, feed_url, session):
     }
 
 
+def fetch_youtube_episodes(show_name, feed_url, session):
+    """Fetch ALL full episodes from the past month from a YouTube feed.
+
+    Skips Shorts, filters to the rolling lookback window, and caps the
+    count at MAX_EPISODES_PER_SHOW. Returns a (possibly empty) list.
+    """
+    response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, "xml")
+
+    entries = soup.find_all("entry")
+    if not entries:
+        raise ValueError("Feed contained no <entry> nodes")
+
+    episodes = []
+    for entry in entries:
+        if len(episodes) >= MAX_EPISODES_PER_SHOW:
+            break
+        if is_youtube_short(entry):
+            continue
+        published = extract_tag_text(entry, "published", "updated")
+        if published and not is_recent(published):
+            continue
+        print(f"  [{show_name}] Parsing episode published {published}")
+        episodes.append(parse_youtube_episode(entry))
+        time.sleep(EPISODE_FETCH_DELAY)
+
+    return episodes
+
+
+def fetch_rss_episodes(show_name, feed_url, session):
+    """Fetch ALL episodes from the past month from a standard RSS feed.
+
+    Filters to the rolling lookback window and caps the count at
+    MAX_EPISODES_PER_SHOW. Returns a (possibly empty) list.
+    """
+    response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, "xml")
+
+    items = soup.find_all("item")
+    if not items:
+        raise ValueError("Feed contained no <item> nodes")
+
+    episodes = []
+    for item in items:
+        if len(episodes) >= MAX_EPISODES_PER_SHOW:
+            break
+        published = extract_tag_text(
+            item, "published", "updated", "pubDate", "dc:date"
+        )
+        if published and not is_recent(published):
+            # Standard podcast RSS feeds are newest-first; once we hit an
+            # episode older than the window, everything after it is too.
+            break
+        print(f"  [{show_name}] Parsing episode published {published}")
+        episodes.append(parse_rss_episode(item))
+        time.sleep(EPISODE_FETCH_DELAY)
+
+    return episodes
+
+
 def build_podcast_section(session):
-    lines = ["### SOCIAL & PODCAST INTELLIGENCE ###"]
+    lines = [
+        "### SOCIAL & PODCAST INTELLIGENCE "
+        f"(ALL EPISODES, {lookback_window_label()}) ###"
+    ]
 
     for show_name, feeds in PODCAST_FEEDS.items():
-        episode = None
+        episodes = []
         errors = []
 
         if "youtube" in feeds:
             try:
-                episode = fetch_youtube_episode(
+                episodes = fetch_youtube_episodes(
                     show_name, feeds["youtube"], session
                 )
             except Exception as exc:
                 errors.append(f"YouTube: {exc}")
 
-        if episode is None and "rss" in feeds:
+        if not episodes and "rss" in feeds:
             try:
-                episode = fetch_rss_episode(
+                episodes = fetch_rss_episodes(
                     show_name, feeds["rss"], session
                 )
             except Exception as exc:
                 errors.append(f"RSS: {exc}")
 
-        if episode:
+        if episodes:
+            lines.append(
+                f"SHOW: {show_name} "
+                f"({len(episodes)} episode(s) in the past month)"
+            )
+            lines.append("")
+            for episode in episodes:
+                lines.extend([
+                    f"EPISODE: {episode['title']}",
+                    f"PUBLISHED: {episode['published']}",
+                    f"URL: {episode['url']}",
+                    f"DATA_TYPE: {episode['data_type']}",
+                    "DATA:",
+                    truncate_text(
+                        episode["content"], EPISODE_TEXT_MAX_CHARS
+                    ),
+                    "-" * 50,
+                    "",
+                ])
+        elif errors:
             lines.extend([
                 f"SHOW: {show_name}",
-                f"EPISODE: {episode['title']}",
-                f"PUBLISHED: {episode['published']}",
-                f"URL: {episode['url']}",
-                f"DATA_TYPE: {episode['data_type']}",
-                "DATA:",
-                truncate_text(episode["content"], EPISODE_TEXT_MAX_CHARS),
+                f"ERROR: {'; '.join(errors)}",
                 "-" * 50,
                 "",
             ])
         else:
             lines.extend([
                 f"SHOW: {show_name}",
-                f"ERROR: {'; '.join(errors) or 'Unknown error'}",
+                "No episodes published in the past month.",
                 "-" * 50,
                 "",
             ])
@@ -642,7 +719,8 @@ def build_podcast_section(session):
 def build_report():
     today = dt.datetime.now().strftime("%Y-%m-%d")
     sections = [
-        f"OCEANFRONT MARKET INTELLIGENCE - {today}",
+        f"OCEANFRONT MARKET INTELLIGENCE - MONTHLY REVIEW - {today}",
+        f"COVERAGE WINDOW: {lookback_window_label()}",
         "=" * 50,
         "",
         build_news_section(),
