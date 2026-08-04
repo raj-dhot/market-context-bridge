@@ -32,7 +32,8 @@ PODCAST_FEEDS = {
 NEWS_QUERIES = {
     "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
     "International & Emerging": "emerging markets international equities",
-    "Competitor & AI Pulse": "Wealthsimple OR Questrade OR AI wealth management",
+    "Competitor Pulse": "Wealthsimple Questrade",
+    "AI Wealth Management": "AI wealth management",
 }
 
 HEADERS = {
@@ -47,7 +48,7 @@ BING_NEWS_RSS_BASE = "https://www.bing.com/news/search?q={query}&format=rss&coun
 REQUEST_TIMEOUT = 20
 NEWS_ITEM_TARGET = 2
 NEWS_LOOKBACK_DAYS = 7
-NEWS_BODY_MIN_LENGTH = 350
+NEWS_BODY_MIN_LENGTH = 100
 NEWS_BODY_MAX_CHARS = 2000
 EPISODE_TEXT_MAX_CHARS = 4000
 OUTPUT_FILE = Path("latest_news.txt")
