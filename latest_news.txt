@@ -1,184 +1,47 @@
-OCEANFRONT MARKET INTELLIGENCE - MONTHLY REVIEW - 2026-06-09
-COVERAGE WINDOW: 2026-05-09 to 2026-06-09
+OCEANFRONT MARKET INTELLIGENCE - 2026-08-04
 ==================================================
 ### NORTH AMERICA (TSX & S&P 500) ###
-TITLE: S&P 500, Nasdaq and TSX fall as tech selloff resumes, Trump says U.S. must react to downed helicopter
-SOURCE: The Globe and Mail
-PUBLISHED: Tue, 09 Jun 2026 08:21:00 GMT
-URL: http://www.bing.com/news/apiclick.aspx?ref=FexRss&aid=&tid=6a289b4e4b294cffaea2efe6dd9b4e35&url=https%3a%2f%2fwww.theglobeandmail.com%2finvesting%2fmarkets%2finside-the-market%2fmarket-news%2farticle-premarket-stocks-get-a-boost-from-tech-dip-buying-bonds-flag%2f&c=14585124823416363346&mkt=en-us
-CONTENT: The S&P 500 and Nasdaq indexes fell on Tuesday as a rebound in technology shares faded and as President Donald Trump said the U.S. must react to Iran’s shooting down of a U.S. helicopter. The TSX also closed lower, with energy stocks weighing on the Canadian benchmark index as oil prices slid. Trump wrote in a social media post that Iran had shot down the U.S. Apache helicopter that was patrolling the Strait of Hormuz overnight, and vowed to respond, which added to doubts about prospects for a truce in the Middle East war. The Cboe Volatility Index hit its highest level since April 7 during the session as stocks sold off. Technology stocks resumed Friday’s selloff following a bounce on Monday. The S&P 500 tech index fell more than 4% before paring losses. The Philadelphia SE Semiconductor Index dropped as much as 8.6% after rising 3% in early trading. The tech index ended down 1.8% and the semiconductor index was 1.9% lower on the day. “When the bounce ran its course this morning, the tape came for sale more broadly. There’s also a rotation going on ... so part of it is more of a momentum unwind,” said Michael O’Rourke, chief market strategist at JonesTrading in Stamford, Connecticut. Trump’s post also briefly “created another leg down,” O’Rourke said. Iran and Israel on Monday said they would stop attacking each other, boosting hopes that war tensions were easing. Investors may also be worried ahead of inflation data and a highly anticipated SpaceX IPO later this week. The blue-chip Dow ended higher, while the Russell 1000 value index gained 0.4%, outperforming the Russell 1000 growth index, which fell 0.7%. The Dow Jones Industrial Average rose 86.10 points, or 0.17%, to 50,872.11, the S&P 500 lost 19.08 points, or 0.26%, to 7,386.65 and the Nasdaq Composite lost 250.84 points, or 0.97%, to 25,678.82. The Toronto Stock Exchange’s S&P/TSX composite index ended down 67.05 points, or 0.2%, at 34,411.69, extending its pullback from a record closing high last...
-
-TITLE: For better or worse, investors are living through Trump’s stock market. Here's why
-SOURCE: CNBC
-PUBLISHED: Sat, 16 May 2026 06:46:00 GMT
-URL: http://www.bing.com/news/apiclick.aspx?ref=FexRss&aid=&tid=6a289b4e4b294cffaea2efe6dd9b4e35&url=https%3a%2f%2fwww.cnbc.com%2f2026%2f05%2f16%2ffor-better-or-worse-investors-are-living-through-trumps-stock-market-heres-why.html&c=8924121290526083324&mkt=en-us
-CONTENT: President Donald Trump has been considered the ultimate stock market president, overseeing an expansion to numerous record highs while serving as a catalyst for major declines. Within the first two months of Trump's second term, the S&P 500 experienced one of the fastest falls to correction territory since World War II, spurred primarily by uncertainty surrounding his tariff policies. Not even a month later, the index almost closed in bear market territory on the heels of the president's "liberation day" tariff announcement. A correction is defined as a fall of at least 10% but less than 20% from its recent high, while a bear market is a drop of at least 20% or more on a closing basis. But the market has also recovered faster than the norm under Trump. When it comes to S&P 500 pullbacks of 5% to 9.9% from its peak, the two that have occurred since early 2025 have reversed faster than the median of 34 days, according to CFRA Research. That's a better rate of recovery than under any other president dating back to Ronald Reagan in 1981. "The bull market takes the stairs, whereas bear markets take the elevator," said Sam Stovall, CFRA Research's chief investment strategist. "What we're seeing in Trump 2.0 is lower volatility overall combined with a quicker-than-average recovery from sharp sell-offs." The most recent recovery in Trump's second term — when the S&P 500 bounced back from a 9.1% decline in only 16 calendar days — was one of the speediest since World War II, tying for ninth fastest, CFRA found. "It's the earnings growth that has caused investors to remain very optimistic," Stovall said. A new era FactSet data shows first-quarter S&P 500 earnings have grown by more than 20% year on year. That's near the strongest profit expansion since the fourth quarter of 2021. That solid earnings backdrop — which backed up the strong enthusiasm around artificial intelligence on the Street — may have supported the market's most recent recovery. But the move higher was first...
-
-TITLE: Tuesday's big stock stories: What’s likely to move the market in the next trading session
-SOURCE: CNBC
-PUBLISHED: Mon, 11 May 2026 16:22:00 GMT
-URL: http://www.bing.com/news/apiclick.aspx?ref=FexRss&aid=&tid=6a289b4e4b294cffaea2efe6dd9b4e35&url=https%3a%2f%2fwww.cnbc.com%2f2026%2f05%2f11%2ftuesdays-big-stock-stories-whats-likely-to-move-the-market.html&c=11160548146734096514&mkt=en-us
-CONTENT: Stocks @ Night is a daily newsletter delivered after hours, giving you a first look at tomorrow and last look at today. Sign up for free to receive it directly in your inbox. Here's what CNBC TV's producers were watching as the S & P 500 closed above 7,400 for the first time., and what's on the radar for the next session. Record breakers The Nasdaq 100 hit a new high on Monday. The index has gained about 17% in the past month. The S & P 500 hit a new high. The index has gained 8.7% in the past month. The Nasdaq Composite hit a high. It has jumped nearly 15% in the past month. The S & P Tech and S & P Real Estate sectors hit new highs on Monday. The S & P Communication Services sector hit a high Friday. No other S & P Sector has hit a new high since early March. .SPX 1M mountain The S & P 500 in the past month Apple and Nvidia These two tech drivers have recently hit new highs. Apple is up nearly 8% in May. It has gained 12% in the past month. Nvidia is up about 10% in May. Shares have jumped 16% in the past month. Jim Cramer of "Mad Money" is a long-time investor of both. These two stocks play outsized roles in the Cramer Charitable Trust. Cramer last bought Apple in March 2014. It is up 1,444% since then. As he likes to say, "Own it. Don't trade it." As for Nvidia, he's done well there too. It is up 1,318% since the last buy in August 2022. FedEx FedEx 's CEO Raj Subramaniam will be on "Mad Money" Tuesday night. The stock has added 3% in the past three months. It's down 6% from the April 30 high. The State Street SPDR S & P Transportation ETF (XTN) has added 0.4% in the past month. The ETF is off 15% from the August high. FDX 3M mountain FedEx shares in the past three months Unequal The Invesco S & P 500 Equal Weight ETF (RSP) has gained 3.7% in the past month. The market-cap weighted S & P 500 has gained 8.7% in the past month. Here are the top percentage drivers in the S & P 500. At the top of the list is Nvidia, followed by Apple, Microsoft , Amazon , Alphabet...
+No recent articles met the extraction threshold.
 
 ### INTERNATIONAL & EMERGING ###
-TITLE: The newfound religion of international diversification
-SOURCE: InvestmentNews
-PUBLISHED: Mon, 11 May 2026 17:00:00 GMT
-URL: http://www.bing.com/news/apiclick.aspx?ref=FexRss&aid=&tid=6a289b55dc4a40b4bb837c49c9619034&url=https%3a%2f%2fwww.investmentnews.com%2fopinion%2fthe-newfound-religion-of-international-diversification%2f266523&c=11163252784785205328&mkt=en-us
-CONTENT: Many investors have found religion when it comes to international diversification. For the first time in eight years, international stocks outpaced their U.S. counterparts in 2025—by an astounding 14 percentage points—returning 32% versus 18% for U.S. equities. That reversal has prompted many investors to increase exposure to international markets. We’ve long advocated for a broad, market‑weighted approach to global equities, emphasizing strategic asset class diversification over market timing or stock picking. The recent performance of non‑U.S. stocks reinforces that philosophy—but investors should be careful to avoid chasing performance. Recency bias is a poor foundation for sound investing. While international stocks posted a banner year in 2025, there is no guarantee of a repeat performance. Some of the forces behind last year’s outperformance remain intact—notably, increased EU spending, tariffs, threats to Fed independence, and uncertainty about U.S. deficits. Other dynamics are new. The war in Iran, for example, has led some investors back to U.S. assets as a perceived safe haven. Even so, international stocks have continued to outperform on a year-to-date basis in 2026. Despite heightened geopolitical risk, we see three reasons why non-U.S. equities may still have room to run. International stocks remain more attractive than U.S. stocks based on valuations. As of early February, investors in the S&P 500 were paying about $22 for every dollar of earnings, based on two-year forward estimates that assume robust growth will continue. By contrast, investors were paying only $15 per dollar of earnings in developed markets ex-U.S., and just $13 in emerging markets. Skeptics argue that higher U.S. valuations are justified because U.S. companies are expected to deliver faster earnings growth. Over time, stock prices do tend to follow earnings, which is why investors should be cautious about abandoning U.S. equities altogether. Still, valuations matter—particularly...
+No recent articles met the extraction threshold.
 
 ### COMPETITOR & AI PULSE ###
 No results returned from Bing News RSS.
 
-### SOCIAL & PODCAST INTELLIGENCE (ALL EPISODES, 2026-05-09 to 2026-06-09) ###
-SHOW: The Loonie Hour (Vancouver/Canada Macro) (2 episode(s) in the past month; latest = full transcript, older = summary)
-
-EPISODE: Vancouver Real Estate Prices Grinding Lower
-PUBLISHED: 2026-06-06T16:00:33+00:00
-URL: https://www.youtube.com/watch?v=L5-GYZXbAAY
-DATA_TYPE: Show notes (transcript unavailable)
+### SOCIAL & PODCAST INTELLIGENCE ###
+SHOW: The Loonie Hour (Vancouver/Canada Macro)
+EPISODE: Developers are Suing Pre-Sale Buyers
+PUBLISHED: 2026-08-01T15:00:26+00:00
+URL: https://www.youtube.com/watch?v=8w93fetx69Q
+DATA_TYPE: Show notes
 DATA:
-Vancouver home prices continued to trend lower as sales activity remained subdued and inventory levels stayed elevated. Higher borrowing costs and affordability challenges are still the key reasons driving reduced buyer demand across many segments of the market. There are also plans for 17 new 'villages' across Vancouver, essentially to prezone 13,000 properties for multifamily housing. Meanwhile, BC Premier David Eby flaunts lower rent prices through his 'effective' strategy of tanking the economy. Check out the Saretsky Group Real Estate Services: ️ Media & Real Estate Inquiries: Stay up to date with our information - My Real Estate Substack: The Loonie Hour Substack: ️ Loonie Hour Socials: ️ Listen to the Podcast on Your Preferred Platform: Disclaimer: The information within our content is not intended to be or construed as investment advice. Please consult a professional advisor before putting a "loonie" into any of these financial markets.
+Vancouver’s presale condo market continues to unravel as buyers walk away from contracts and developers increasingly turn to lawsuits to recover massive shortfalls. There are also growing signs that the proposed condo bailout may ultimately be more about protecting B.C. credit unions than developers or buyers. Finally, attention turns to the bond market, where rising long-term yields in the United States are already spilling into Canada, threatening the economics of highly leveraged rental projects and potentially creating the next major source of stress in Canadian real estate. ️ Media & Real Estate Inquiries: Schedule a call with IceCap Asset Management: Get our handwritten weekly updates - My Real Estate Substack: The Loonie Hour Substack: ️ Loonie Hour Socials: ️ Listen to the Podcast on Your Preferred Platform: Disclaimer: The information within our content is not intended to be or construed as investment advice. Please consult a professional advisor before putting a "loonie" into any of these financial markets.
 --------------------------------------------------
 
-EPISODE: The Canadian Economy Slips into Recession | The Loonie Hour Episode 244
-PUBLISHED: 2026-06-05T16:00:32+00:00
-URL: https://www.youtube.com/watch?v=kp0PK4ejO54
-DATA_TYPE: Show notes summary
+SHOW: All-In Podcast (Tech/Global Macro)
+EPISODE: Chip Stocks Crash, $20B Fund Margin Called, Frontier Labs: SLOW DOWN AI, Mamdani's Grocery Stores
+PUBLISHED: 2026-07-31T22:51:01+00:00
+URL: https://www.youtube.com/watch?v=ViqYWhLimGg
+DATA_TYPE: Show notes
 DATA:
-Canada enters a "technical" recession. The curious case of the Bank of Canada's gold reserves. The Bitcoin bear market deepens. Canada has the second largest Natural Gas reserves in the world. Start an investment portfolio that's built to perform with Neighbourhood Holdings! For Mortgage Brokers: For Investors and Advisors: Join Seeking Alpha Premium And Get 25% Off Today!: ️ Media & Real Estate Inquiries: Stay up to date with our information - My Real Estate Substack: The Loonie Hour Substack: ️ Loonie Hour Socials: ️ Listen to the Podcast on Your Preferred Platform: Timestamps: 00:00 Introduction 05:31 Housing Market Bottomed? 10:14 Timing the Bond Market Crisis 11:53 Why Bond ETFs May Be Riskier Than Investors Think 14:06 Demographics, Labor Supply & Selling Pressure 15:59 Will Governments React Too Late? 19:23 Why Canada Sold Its Gold 20:58 Gold as a Strategic National Asset 23:03 Has Canada Entered a Technical Recession? 26:10 GDP, Productivity & Population Growth 27:22 Canada's Housing Crisis vs Population Crisis 28:22 Commodities, Debt & Government Spending 29:19 Is There Any Good News in Canada? 32:08 BC Hydro, Electricity Rates & Government Policy 34:01 BC's Looming Power Shortage 37:28 Energy Reality vs Political Narratives 38:54 Natural Gas, Emissions & Energy Security 40:28 Economic Weakness Is Starting to Show 41:13 Mortgage Renewals & Household Stress 42:03 Rising Delinquencies Across Canada 43:12 Distressed Sales Hit 25-Year High 44:19 Foreclosures, Courts &...
+(0:00) Bestie intros (1:19) Chip stocks crash, Leopold Aschenbrenner's $20B fund gets margin called (20:20) China's advantage and green shoots for the US economy (34:12) Frontier Labs say "SLOW DOWN AI" (1:01:15) Why are frontier labs "burning books"? (1:14:45) Socialism Corner: Mamdani's grocery stores and the "Socialist Spectacle" (1:24:44) Science Corner: Understanding and mapping the brain Apply for All-In Summit 2026: Referenced in the show: v
 --------------------------------------------------
 
-SHOW: All-In Podcast (Tech/Global Macro) (6 episode(s) in the past month; latest = full transcript, older = summary)
-
-EPISODE: Bill Maris: How Google Could Crush AI Competitors, Why Small Funds Win, and AI's Atari Stage
-PUBLISHED: 2026-06-09T15:30:54+00:00
-URL: https://www.youtube.com/watch?v=0umrMuUClC4
-DATA_TYPE: Show notes (transcript unavailable)
+SHOW: Rational Reminder (Canada Investing)
+EPISODE: Answering Your Financial Questions | #420
+PUBLISHED: Thu, 30 Jul 2026 09:30:00 +0000
+URL: https://rationalreminder.libsyn.com/answering-your-financial-questions-420
+DATA_TYPE: Episode page
 DATA:
-(0:00) Bill Maris joins the Besties! (0:33) Four critical lessons from a career in technology (5:58) Building Google Ventures with data and machine learning (9:51) Why small VC funds beat big ones on average (14:36) OpenAI's valuation problem and the AI price war (19:09) AI's "Atari Stage": what comes next? (25:23) VC's broken incentives and the future of deep tech Thanks to our partners for making this possible! EY - Agentic AI is introducing a new investment discipline. As AI shifts to consumption-based models, EY connects spend to enterprise value. NYSE - Thank you to our partner, the New York Stock Exchange - a modern marketplace and exchange for building the future. It all happens at the NYSE. Plaud - Never miss a moment. Plaud, our official wearable AI note-taking partner at All-In Liquidity Summit, captured every insight.
+Jul 30, 2026 In this Ask Me Anything episode, Ben Felix, Ben Wilson, and Louai Bibi tackle a wide-ranging collection of listener questions spanning investing, retirement, family finance, and financial planning. Along the way, they combine academic research, practical experience, and thoughtful discussion to separate evidence-based decisions from intuition. The conversation explores everything from teaching children healthy money habits and the long-term behavioral challenges of value investing to sequence of returns risk, retirement spending strategies, and global portfolio construction. The episode concludes with an in-depth discussion of Louai Bibi's National Financial Planning Award-winning financial plan, highlighting the importance of holistic advice, evidence-based planning, and continuous improvement through client feedback. Key Points From This Episode: (00:00:00) Introduction (0:05:30) Advice for aspiring financial planners: Building skills, credentials, networks, and mentorship early in your career. (0:07:35) Why young advisors should be “a sponge” and learn from both good and bad professional experiences. (0:09:41) Ben Felix on completing the CFA, CIM, and CFP early—and why creating content accelerated his learning. (0:11:51) Why getting large numbers of client-facing “reps” can dramatically improve an advisor’s ability to communicate advice. (0:15:44) Choosing the right firm, team, and mentors—and how networking helped Ben Felix ultimately join PWL. (0:18:53) Should a young physician borrow from a professional line of credit to invest? (0:24:55) Robert Merton’s perspective on leverage for young investors and the risks of implementing leverage through margin borrowing. (0:28:21) Why the psychological experience of investing borrowed money can be very different from owning an unleveraged portfolio. (0:30:35) How much leverage is needed before it meaningfully changes a long-term financial plan. (0:31:36) Should investors increase their equity allocation before considering leverage? (0:33:39) Louai’s experience working with physicians and why becoming debt-free can change how people feel about borrowing to invest. (0:36:00) Louai and Ben Felix share their own experiences with leverage. (0:36:59) How to teach children about money, scarcity, saving, generosity, and spending. (0:38:26) Ben Wilson’s approach: Save 50%, give 10%, and let his kids decide what to do with the remaining 40%. (0:40:02) Using wealth for memorable family experiences rather than simply giving children more money. (0:42:51) Why anticipating an experience can be an important part of the enjoyment it creates. (0:43:42) Is the value premium worth the behavioral challenge of potentially enduring years of underperformance? (0:44:11) Ben Felix explains why the difficulty of sticking with value may itself contribute to the premium. (0:45:47) Can having a sufficiently large portfolio eliminate sequence-of-returns concerns? (0:49:41) Reframing “sequence of returns” as “sequence of withdrawals”—and why flexible spending matters. (0:51:21) Separating retirement expenses into fixed needs and flexible spending. (0:52:47) The purchases that have delivered the best personal ROI for Ben, Ben, and Louai. (0:53:08) Ben Felix on his indoor basketball hoop, family travel, sauna, and prepared meal delivery. (0:56:56) Ben Wilson on family vacations, skiing, cycling, and why his family chose a pool over a cottage or boat. (0:58:27) Louai on his 49-inch monitor, his dog, and investing in health and fitness. (1:00:42) How should investors geographically weight a global small-cap value portfolio? (1:05:13) Why a globally diversified portfolio that an investor can actually stick with matters more than finding a theoretically perfect country allocation. (1:07:19) What should investors approaching retirement or FIRE do about sequence-of-returns risk? (1:09:00) Research comparing declining, rising, and static equity allocations during retirement. (1:13:38) Why risk tolerance,...
 --------------------------------------------------
 
-EPISODE: Palo Alto Networks CEO: "AI Found 5 Years of Bugs in 6 Weeks"
-PUBLISHED: 2026-06-08T20:06:28+00:00
-URL: https://www.youtube.com/watch?v=hObRMv6qCi0
-DATA_TYPE: Show notes summary
+SHOW: The Compound & Friends (US Retail Sentiment)
+EPISODE: Why Demand for Compute Is About to Explode With Alex Kantrowitz
+PUBLISHED: Fri, 31 Jul 2026 09:01:00 -0000
+URL: https://pdst.fm/e/pscrb.fm/rss/p/traffic.megaphone.fm/TCP4172736707.mp3
+DATA_TYPE: Show notes
 DATA:
-(0:00) Palo Alto Networks CEO Nikesh Arora joins the Besties! (0:47) Claude Mythos found years of vulnerabilities in Palo Alto's code in weeks (5:15) Are cyber defenders losing the race against AI attackers? (6:50) Analytical SaaS is dead, so what survives the AI wave? (14:06) If models become a utility, where will the money be made? (20:35) Armchair CEO: Nikesh rates Waymo, Google, and OpenAI (28:22) Palo Alto's M&A playbook and the path to $1 trillion
---------------------------------------------------
-
-EPISODE: Why Secondary Markets Are Eating the IPO | All-In Liquidity Secondary Markets Panel
-PUBLISHED: 2026-06-07T18:26:25+00:00
-URL: https://www.youtube.com/watch?v=V0lFjTWx36I
-DATA_TYPE: Show notes summary
-DATA:
-(0:00) Brad Gerstner, Gavin Baker, and Kelly Rodriques join the Besties! (0:47) Secondary Markets are Booming & Competing with IPOs (3:10) Why Companies are Staying Private So Long? (9:22) SPVs, the Forge-Schwab Deal, Democratizing Private Market Access (13:28) Secondary Markets as Exit Liquidity for VCs (27:00) The Private Market Bubble? (32:03) Hottest Secondary Companies Right Now Thanks to our partners for making this possible! EY - Agentic AI is introducing a new investment discipline. As AI shifts to consumption-based models, EY connects spend to enterprise value. NYSE - Thank you to our partner, the New York Stock Exchange - a modern marketplace and exchange for building the future. It all happens at the NYSE. Plaud - Never miss a moment. Plaud, our official wearable AI note-taking partner at All-In Liquidity Summit, captured every insight.
---------------------------------------------------
-
-EPISODE: The IPO Comeback: Why Tech Giants Are Finally Going Public | All-In Liquidity IPO Panel
-PUBLISHED: 2026-06-06T16:30:25+00:00
-URL: https://www.youtube.com/watch?v=jLICvWE7w2Q
-DATA_TYPE: Show notes summary
-DATA:
-(0:00) CEOs Andrew Feldman (Cerebras) and Will Marshall (Planet Labs) join the Besties! (2:05) Both CEOs on going public: Impact on employees, customers, and business operations (13:18) Timelines for datacenters in space (19:28) Cerebras business breakdown, AI's impact on the silicon market (24:45) How Founder/CEOs think about liquidity on the road to going public Thanks to our partners for making this possible! EY - Great tech starts with a big idea. From startup to scale, EY helps tech founders get financials right early so they can focus on what’s next. NYSE - Thank you to our partner, the New York Stock Exchange - a modern marketplace and exchange for building the future. It all happens at the NYSE. Plaud - Never miss a moment. Plaud, our official wearable AI note-taking partner at All-In Liquidity Summit, captured every insight. Apply for Summit 2026:
---------------------------------------------------
-
-EPISODE: Dan Loeb: The Lost Art of Short Selling, and Why Stock Picking is Back
-PUBLISHED: 2026-06-05T19:37:19+00:00
-URL: https://www.youtube.com/watch?v=i8OI8CNdZgU
-DATA_TYPE: Show notes summary
-DATA:
-(0:00) Dan Loeb joins the Besties! (0:34) Investor journey: From message boards and trolling Wall Street to a multibillion dollar hedge fund (3:15) Third Point's early days: mentors and market turmoil (8:47) Strategy shift: Event-driven to quality and AI (16:01) The art of short selling and a homebuilder trade (22:15) Criminal justice reform and the Ross Ulbricht pardon Thanks to our partners for making this possible! EY - Agentic AI is introducing a new investment discipline. As AI shifts to consumption-based models, EY connects spend to enterprise value. NYSE - Thank you to our partner, the New York Stock Exchange - a modern marketplace and exchange for building the future. It all happens at the NYSE. Plaud - Never miss a moment. Plaud, our official wearable AI note-taking partner at All-In Liquidity Summit, captured every insight. Apply for Summit 2026:
---------------------------------------------------
-
-EPISODE: Thomas Laffont: The $4T AI IPO Wave Is Coming… and We’ve Never Seen Anything Like It
-PUBLISHED: 2026-06-04T18:32:07+00:00
-URL: https://www.youtube.com/watch?v=UIoV8rG_25s
-DATA_TYPE: Show notes summary
-DATA:
-(0:00) Coatue's Thomas Laffont joins the Besties! (0:30) Public markets are back as AI is dominates the "Unicorn Economy" (5:15) The $4T AI IPO explosion (7:48) The case for SpaceX: Compounding launch monopoly and Starlink (10:38) The 10x Paradox: Why we're seeing unprecedented scaling (15:33) Segmenting AI markets and future impact (18:32) Bestie Q&A: Power Law in AI, future of VC, where revenue is coming from, liquidity explosion Thanks to our partners for making this possible! EY - Agentic AI is introducing a new investment discipline. As AI shifts to consumption-based models, EY connects spend to enterprise value. NYSE - Thank you to our partner, the New York Stock Exchange - a modern marketplace and exchange for building the future. It all happens at the NYSE. Plaud - Never miss a moment. Plaud, our official wearable AI note-taking partner at All-In Liquidity Summit, captured every insight. Apply for Summit 2026:
---------------------------------------------------
-
-SHOW: Rational Reminder (Canada Investing) (4 episode(s) in the past month; latest = full transcript, older = summary)
-
-EPISODE: Ben Carlson: Investing at All-Time Highs | #412
-PUBLISHED: Thu, 04 Jun 2026 09:30:00 +0000
-URL: https://rationalreminder.libsyn.com/ben-carlson-investing-at-all-time-highs-412
-DATA_TYPE: Episode page (may include transcript)
-DATA:
-Jun 4, 2026 In this episode, we are joined by Ben Carlson, Director of Institutional Asset Management at Ritholtz Wealth Management and author of Risk & Reward, for a wide-ranging conversation about market history, investor psychology, and the realities of long-term investing. Ben brings his trademark blend of data-driven thinking and plainspoken storytelling to topics like market crashes, inflation, diversification, and why investors are so tempted to time the market. We explore the lessons from Japan’s historic asset bubble, the lingering impact of the Great Depression, and why diversification remains one of the few true free lunches in investing. Ben also explains the difference between volatility and risk, why the stock market is not the economy, and how investor behavior—not market performance—is often the biggest determinant of success. Along the way, we discuss inflation hedges, lost decades, speculative behavior, and the psychological challenge of staying invested through inevitable downturns. Key Points From This Episode: (0:00:20) Introducing Ben Carlson, his new book Risk & Reward, and his long-running blog A Wealth of Common Sense. (0:03:16) Why investors shouldn’t panic about investing at all-time highs. (0:03:58) The Japanese bubble and crash as one of history’s biggest market anomalies. (0:05:39) Why Japan’s long-term returns look very different when viewed over 50 years. (0:06:27) Lessons from the Great Depression and the worst stock market crash in U.S. history. (0:07:43) Why the best long-term returns often . (0:08:53) The role of diversification and self-awareness in managing portfolio risk. (0:09:55) Defining investment success by achieving personal goals—not beating benchmarks. (0:10:42) Why inflation feels so painful psychologically for investors and households. (0:11:42) Ben’s three favorite long-term inflation hedges: human capital, housing, and stocks. (0:13:47) Why market timing is psychologically seductive—and so difficult to execute successfully. (0:15:00) Why handling losses is the single most important skill in investing. (0:16:13) How devastating the economic side of the Great Depression really was. (0:18:49) What policymakers learned from the Great Depression and 2008. (0:20:39) The difference between recessionary and non-recessionary bear markets. (0:21:52) Why the biggest up days and down days tend to cluster together in bear markets. (0:23:18) Preparing for inevitable bear markets with a durable long-term plan. (0:25:07) Why the stock market and the economy can diverge dramatically. (0:28:10) The difference between volatility and risk—and why risk is often personal. (0:29:37) Why comparing the stock market to a casino is fundamentally wrong. (0:31:55) How modern investing platforms encourage speculative behavior. (0:33:18) How extreme Japan’s 1980s asset bubble became before collapsing. (0:35:43) The most important diversification lessons from Japan’s lost decades. (0:37:39) How common “lost decades” actually are in stock market history. (0:40:58) Three dimensions of diversification: geography, asset class, and strategy. (0:41:53) Why there is no perfect portfolio—only the right portfolio for you. (0:42:52) Common ways investors lose money in markets. (0:44:03) Why investors should be skeptical of billionaire market predictions. (0:45:57) Ben’s evolving definition of success and raising good, kind children. Links From Today’s Episode: Meet with PWL Capital: Rational Reminder on iTunes — Rational Reminder on Instagram — Rational Reminder on YouTube — Benjamin Felix — Benjamin on X — Benjamin on LinkedIn — Editing and post-production work for this episode was provided by The Podcast Consultant (
---------------------------------------------------
-
-EPISODE: Market Simulations & Financial Planning | #411 (John Yang)
-PUBLISHED: Thu, 28 May 2026 09:30:00 +0000
-URL: https://rationalreminder.libsyn.com/episode-411-market-simulations-financial-planning
-DATA_TYPE: Show notes summary
-DATA:
-In this episode, Ben Felix and Braden Warwick unpack the surprisingly complex world of expected return modeling and why it matters so much for retirement projections, portfolio construction, and financial advice. They explain how PWL Capital currently estimates expected returns across asset classes, why traditional Monte Carlo methods relying on Gaussian distributions may miss important market behaviors, and how new research could improve the realism of long-term financial planning simulations. The conversation also explores a fascinating collaboration between PWL and Columbia Engineering student John Yang, who worked with Professor Michael Robbins on a project to build more realistic synthetic return data for financial planning. John explains how his team used empirical distributions, t-copulas, and Extreme Value Theory to better capture market crashes, fat tails, and asset co-movements during periods of stress. Ben and Braden then analyze how these improved simulation methods affect financial planning outcomes, sustainable spending estimates, and projections for long-term wealth accumulation. Key Points From This Episode: (0:00:00) Introduction to expected return modeling and why it matters for financial planning. (0:00:25) The importance of volatility, correlations, distribution shape, and time-series behavior in portfolio projections. (0:01:26) How Scott Cederburg's research on block bootstrapping influenced PWL's thinking on simulations. (0:02:03) Introduction to...
---------------------------------------------------
-
-EPISODE: Episode 410: The State of Investing in 2026
-PUBLISHED: Thu, 21 May 2026 09:30:00 +0000
-URL: https://rationalreminder.libsyn.com/economist-the-state-of-investing-in-2026
-DATA_TYPE: Show notes summary
-DATA:
-In this episode, we are joined by Shelly Antoniewicz, Chief Economist at the Investment Company Institute (ICI), for a data-rich exploration of the modern fund industry. Shelly walks us through the staggering scale of global regulated funds, how ETFs and mutual funds shape capital allocation, and why the rise of indexing may not be as disruptive as critics fear. We discuss the growth of ETFs versus mutual funds, increasing concentration among large fund sponsors, and how financial advisors are reshaping portfolios around low-cost investment products. Shelly also explains why fund fees keep falling, how 401(k) plans have democratized investing for middle-class households, and why investor choice remains central to healthy capital markets. Along the way, we unpack active ETFs, intraday liquidity, interval funds, private credit exposure, and the evolving role of retail investors in financial markets. Key Points From This Episode: (0:00:00) Introducing Shelly Antoniewicz and the role of the Investment Company Institute. (0:01:14) The Investment Company Fact Book and why it has become a foundational resource for fund industry data. (0:03:31) Regulated funds globally now account for roughly $88 trillion in assets. (0:04:47) The U.S. market contains nearly 17,000 investment companies across mutual funds, ETFs, and related structures. (0:05:40) U.S. equity funds alone hold roughly $27 trillion in assets. (0:06:52) More than half of mutual fund and ETF assets are now in index...
---------------------------------------------------
-
-EPISODE: Episode 409: Investment Banker - What Private Equity Doesn't Tell You
-PUBLISHED: Thu, 14 May 2026 14:57:00 +0000
-URL: https://rationalreminder.libsyn.com/episode-409-investment-banker-what-private-equity-doesnt-tell-you-0
-DATA_TYPE: Show notes summary
-DATA:
-In this episode, we are joined by Jeff Hooke, former investment banking, private equity, and private debt executive turned academic critic of alternative investments, for a rigorous and provocative examination of private equity, private credit, and institutional investing. Jeff draws on decades of experience in finance and years of academic research to challenge many of the assumptions driving institutional and retail allocations to private markets. We discuss why pension plans and endowments continue pouring capital into alternatives despite evidence of underperformance, how private market valuations can obscure true risk, and why the fee structures embedded in private funds create enormous hurdles for investors. Jeff explains the methodological challenges of benchmarking private investments, the role of investment consultants and industry incentives, and why illiquidity and opaque reporting make private assets especially difficult for retail investors to evaluate. Along the way, we explore survivorship bias, public market equivalents, unrealized valuations, and the growing push to bring private assets into retirement portfolios. This conversation is an in-depth look at the incentives, risks, and realities shaping the modern alternatives industry. Key Points From This Episode: (0:00:18) Introduction to Jeff Hooke and the focus on private equity, private credit, and alternative investments. (0:04:21) Why institutions and retail investors continue allocating heavily to...
---------------------------------------------------
-
-SHOW: The Compound & Friends (US Retail Sentiment) (6 episode(s) in the past month; latest = full transcript, older = summary)
-
-EPISODE: Why AI Momentum Stocks Got Killed, OpenAI's Confidential IPO Filing, Apple Launches Siri AI
-PUBLISHED: Tue, 09 Jun 2026 22:47:00 -0000
-URL: https://pdst.fm/e/pscrb.fm/rss/p/traffic.megaphone.fm/TCP9497444473.mp3
-DATA_TYPE: Show notes (transcript unavailable)
-DATA:
-On this episode of What Are Your Thoughts, Downtown Josh Brown and Michael Batnick break down the market's "Blood Red Friday" selloff, Apple's AI relaunch, and OpenAI's blockbuster IPO filing. They discuss the rapidly shifting AI narrative, whether Apple's new Siri and AI-powered devices can drive hardware sales, and why OpenAI's path to a trillion-dollar valuation isn't as straightforward as it seems. Plus, a healthy correction or something more, the latest on SpaceX, data vs. stocks, Michael's case for hotels over restaurants, a mystery chart from Josh, and much more! This episode is sponsored by Betterment Advisor Solutions . Learn more at !
---------------------------------------------------
-
-EPISODE: Nick Colas and Jessica Rabe on the 6 Standard Deviation Tech Event, How SpaceX Will Tell Us if It’s 1997 or 1999
-PUBLISHED: Mon, 08 Jun 2026 21:00:00 -0000
-URL: https://pdst.fm/e/pscrb.fm/rss/p/traffic.megaphone.fm/TCP6332434959.mp3
-DATA_TYPE: Show notes summary
-DATA:
-On this episode of What Did We Learn, Josh Brown , Nick Colas and Jessica Rabe examine one of the most extreme stretches of tech outperformance in recent market history and discuss what it could mean for investors going forward. They break down the growing gap between Semiconductors and Software, the role of rising interest rates, and whether leadership is becoming too concentrated. They also take a closer look at SpaceX and why its highly anticipated IPO could be one of the most important market events in years. The crew also revisits the lessons of the dot-com boom, exploring what really happened in 1999, how investors knew the market had gone too far, and what today's environment can teach us about spotting excess before the tide turns. This episode is sponsored by WisdomTree. To learn more about learn more about OPPJ and the broader suite of geopolitical opportunity ETFs WisdomTree offers, visit: !
---------------------------------------------------
-
-EPISODE: Neil Dutta & Skanda on Why the Recession Signals Are All Wrong
-PUBLISHED: Fri, 05 Jun 2026 09:01:00 -0000
-URL: https://pdst.fm/e/pscrb.fm/rss/p/traffic.megaphone.fm/TCP1345063373.mp3
-DATA_TYPE: Show notes summary
-DATA:
-On episode 245 of The Compound and Friends, Michael Batnick and Downtown Josh Brown are joined by Neil Dutta and Skanda Amarnath to discuss: the AI investment boom, the state of the labor market, inflation risks, consumer spending, Fed policy, market breadth, whether this cycle is as unusual as it feels, and much more! This episode is sponsored by Nuveen and ClearBridge Investments. Learn more about Nuveen’s comprehensive private markets platform at Rising geopolitical tensions, continued market uncertainty, stocks backed by can offer more predictable cash flows as volatility increases. To learn more, go to .com/ .com/thecompoundnews
---------------------------------------------------
-
-EPISODE: What You Need to Survive a Bull Market
-PUBLISHED: Tue, 02 Jun 2026 22:49:00 -0000
-URL: https://pdst.fm/e/pscrb.fm/rss/p/traffic.megaphone.fm/TCP4414451701.mp3
-DATA_TYPE: Show notes summary
-DATA:
-Join Michael Batnick (Managing Partner, Ritholtz Wealth) Sean Russo (Investment Analyst, Ritholtz Wealth) and Matt Cerminaro (Exhibit A co-founder, AKA Chart Kid Matt) for another episode of What Are Your Thoughts and see what they have to say about the biggest topics in investing and finance! This episode is sponsored by Neuberger. Explore NBSD–including all risks and important information‒at !
---------------------------------------------------
-
-EPISODE: What if It’s Still Early? With Denise Chisholm
-PUBLISHED: Fri, 29 May 2026 09:01:00 -0000
-URL: https://pdst.fm/e/pscrb.fm/rss/p/traffic.megaphone.fm/TCP9449764101.mp3
-DATA_TYPE: Show notes summary
-DATA:
-On episode 244 of The Compound and Friends, Michael Batnick and Downtown Josh Brown are joined by Denise Chisholm to discuss: whether AI capex is a bubble, why stocks keep climbing despite persistent skepticism, and how earnings growth is broadening beyond the Mag 7. They discuss semiconductors, margins, inflation, Fed policy, mega-IPOs, and more! This episode is sponsored by Franklin Templeton. Learn more at . .com/ .com/thecompoundnews
---------------------------------------------------
-
-EPISODE: SpaceX IPO With Rupert Mitchell, Consumer Discretionary Is Not an Econ Signal, Halo ETF Launches
-PUBLISHED: Tue, 26 May 2026 22:56:00 -0000
-URL: https://pdst.fm/e/pscrb.fm/rss/p/traffic.megaphone.fm/TCP2053845819.mp3
-DATA_TYPE: Show notes summary
-DATA:
-Join Downtown Josh Brown and Michael Batnick for another episode of What Are Your Thoughts and see what they have to say about: SpaceX IPO, Halo ETFs, consumer problems, a mystery chart, and more! Plus, a special appearance by Rupert Mitchell! This episode is sponsored by: DBMF and ClearBridge Investments. Find out why managed futures should be a foundational part of any alternatives allocation at Rising geopolitical tensions, continued market uncertainty, stocks backed by can offer more predictable cash flows as volatility increases. Learn more at !
+On episode 253 of The Compound and Friends, Downtown Josh Brown and Michael Batnick are joined by Big Technology founder, Alex Kantrowitz, to discuss: OpenAI and Anthropic’s explosive growth, the threat to traditional software companies, soaring cloud demand, agentic AI, and the diverging strategies of Microsoft, Meta, Amazon, Apple, Google, and other tech giants. Plus, where AI profits may ultimately accrue, and whether today’s massive spending boom can deliver lasting returns. This episode is sponsored by ProShares . Learn more at proshares.com . .com/ .com/thecompoundnews
 --------------------------------------------------
