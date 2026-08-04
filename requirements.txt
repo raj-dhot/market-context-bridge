@@ -1,6 +1,5 @@
-beautifulsoup4>=4.12
-curl_cffi>=0.6.2
-lxml>=5.2
-requests>=2.31
-trafilatura>=1.9
-youtube-transcript-api>=1.2
+curl_cffi==0.16.0
+trafilatura>=1.8,<3
+beautifulsoup4>=4.12,<5
+lxml>=5.0,<6                 # required: BeautifulSoup(..., "xml") + trafilatura
+youtube-transcript-api>=0.6,<1
