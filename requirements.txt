@@ -1,5 +1,5 @@
 beautifulsoup4>=4.12
-duckduckgo-search>=6.0
+curl_cffi>=0.6.2
 lxml>=5.2
 requests>=2.31
 trafilatura>=1.9
