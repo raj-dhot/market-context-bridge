@@ -20,6 +20,13 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
+# curl_cffi impersonation target. Kept as a hedge: on GitHub Actions
+# (datacenter IPs) some publishers reject non-browser TLS fingerprints, and
+# impersonation can recover those extractions. It does NOT help with msn.com
+# (whose body is JavaScript-rendered and simply absent from the HTML), which is
+# why those are skipped entirely below.
+IMPERSONATE = "chrome124"
+
 PODCAST_FEEDS = {
     "The Loonie Hour (Vancouver/Canada Macro)": {
         "youtube": "https://www.youtube.com/feeds/videos.xml?channel_id=UCdpU4qvzypmjZbbcLiPWV8A",
@@ -36,25 +43,50 @@ PODCAST_FEEDS = {
     },
 }
 
+# NOTE: Do NOT use the boolean operator "OR" in these queries. Bing News RSS
+# treats a raw "OR" literally and returns ZERO results. Use plain space-
+# separated keywords instead.
 NEWS_QUERIES = {
     "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
     "International & Emerging": "emerging markets international equities",
-    "Competitor & AI Pulse": "Wealthsimple Questrade AI wealth management",
+    "Competitor & AI Pulse": "Wealthsimple Questrade AI wealth management Canada",
 }
 
+# Do NOT set a User-Agent here. curl_cffi's impersonate=IMPERSONATE already
+# installs a complete, self-consistent browser header set (User-Agent + the
+# matching sec-ch-ua hints) that lines up with its TLS/JA3 fingerprint.
+# Overriding the User-Agent by hand desynchronizes those and can actually
+# TRIGGER the anti-bot challenges we are trying to avoid. Only add headers
+# that impersonation does not already cover.
 HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-    )
+    "Accept-Language": "en-CA,en;q=0.9",
 }
 
-BING_NEWS_RSS_BASE = "https://www.bing.com/news/search?q={query}&format=rss&count=10"
+BING_NEWS_RSS_BASE = "https://www.bing.com/news/search?q={query}&format=rss&count=15"
+# Second, independent discovery source. Used to top up a category when Bing
+# returns too few recent candidates (or is blocked/empty).
+GOOGLE_NEWS_RSS_BASE = (
+    "https://news.google.com/rss/search?q={query}&hl=en-CA&gl=CA&ceid=CA:en"
+)
 
-REQUEST_TIMEOUT = 20
-NEWS_ITEM_TARGET = 2
-NEWS_LOOKBACK_DAYS = 7
-NEWS_BODY_MIN_LENGTH = 100
+# Hosts we never try to full-text extract; we go straight to the RSS
+# headline/snippet instead. Two reasons a host lands here:
+#   * msn.com  - body is JavaScript-rendered and absent from static HTML
+#                (verified: no articleBody/JSON-LD/embedded data; content API
+#                returns HTTP 400). Unrecoverable by scraping.
+#   * news.google.com - Google News links are opaque redirect stubs, not the
+#                article; extraction always yields ~nothing, so fetching them
+#                just wastes time. Use their title/snippet directly instead.
+UNEXTRACTABLE_HOSTS = ("msn.com", "news.google.com")
+
+REQUEST_TIMEOUT = 20           # RSS feed fetches
+ARTICLE_TIMEOUT = 12           # individual article-body fetches (bound CI time)
+NEWS_ITEM_TARGET = 3           # articles to surface per category
+NEWS_CANDIDATE_CAP = 25        # max RSS items to consider per category
+NEWS_MAX_FETCH_ATTEMPTS = 8    # max full-text extraction attempts per category
+NEWS_LOOKBACK_DAYS = 31        # trailing month, to match the monthly brief
+NEWS_BODY_MIN_LENGTH = 300     # min chars to count an extraction as full text
+NEWS_SNIPPET_MIN_LENGTH = 80   # min chars for an RSS snippet to be usable
 NEWS_BODY_MAX_CHARS = 2000
 EPISODE_TEXT_MAX_CHARS = 4000
 OUTPUT_FILE = Path("latest_news.txt")
@@ -94,12 +126,12 @@ def clean_social_noise(text):
     cleaned = html.unescape(text or "")
 
     # Zero-width / invisible unicode chars
-    cleaned = re.sub(r"[\u2060\u200b\u200c\u200d\ufeff\u00ad]+", "", cleaned)
+    cleaned = re.sub(r"[⁠​‌‍﻿­]+", "", cleaned)
     # Common emoji ranges
     cleaned = re.sub(
         r"[\U0001F300-\U0001FAD6\U0001F600-\U0001F64F"
         r"\U0001F680-\U0001F6FF\U0001F900-\U0001F9FF"
-        r"\u2600-\u26FF\u2700-\u27BF]+",
+        r"☀-⛿✀-➿]+",
         " ",
         cleaned,
     )
@@ -307,23 +339,42 @@ def fetch_youtube_transcript(url_or_id):
     return cleaned or None
 
 
-def fetch_article_text(url, session=None):
+def fetch_article_text(url, session=None, favor_recall=False):
+    """Download an article and return its main text (str) or None.
+
+    Skips hosts whose body is JavaScript-rendered (see UNEXTRACTABLE_HOSTS).
+
+    favor_recall defaults to False so the pre-existing PODCAST caller
+    (fetch_rss_episode) keeps its original extraction behavior. The news
+    pipeline opts in with favor_recall=True so borderline article pages still
+    yield text.
+    """
+    host = urlparse(url).netloc.lower()
+    if any(bad in host for bad in UNEXTRACTABLE_HOSTS):
+        logging.info(f"Skipping unextractable host ({host}): {url[:80]}")
+        return None
+
     try:
-        if session:
-            response = session.get(url, timeout=REQUEST_TIMEOUT)
+        if session is not None:
+            response = session.get(url, timeout=ARTICLE_TIMEOUT)
         else:
-            response = requests.get(url, impersonate="chrome110", timeout=REQUEST_TIMEOUT)
-            
+            response = requests.get(
+                url, impersonate=IMPERSONATE, timeout=ARTICLE_TIMEOUT
+            )
+
         if response.status_code != 200:
-            logging.warning(f"Failed to fetch {url}: HTTP {response.status_code}")
+            logging.warning(f"Failed to fetch {url[:80]}: HTTP {response.status_code}")
             return None
         extracted = trafilatura.extract(
-            response.text, include_comments=False, include_links=False
+            response.text,
+            include_comments=False,
+            include_links=False,
+            favor_recall=favor_recall,
         )
         cleaned = normalize_whitespace(extracted)
         return cleaned or None
     except Exception as exc:
-        logging.error(f"Error extracting text from {url}: {exc}")
+        logging.error(f"Error extracting text from {url[:80]}: {exc}")
         return None
 
 
@@ -378,16 +429,34 @@ def extract_episode_notes(item):
     return "No transcript or show notes available."
 
 
-# ── BING NEWS RSS ─────────────────────────────────────────────────────────────
+# ── NEWS DISCOVERY (BING + GOOGLE NEWS RSS) ────────────────────────────────────
 
 
-def fetch_bing_news_rss(query, session, max_items=8):
-    """Fetch news items from Bing News RSS for the given query.
+def _decode_bing_url(link):
+    """Bing wraps each result in an apiclick.aspx redirect carrying the real
+    publisher URL in the `url=` query param. Decode it so we fetch the
+    publisher directly and can see the real host (e.g. detect msn.com)."""
+    if not link:
+        return link
+    if "bing.com/news/apiclick" in link:
+        real = parse_qs(urlparse(link).query).get("url", [None])[0]
+        if real:
+            return real
+    return link
 
-    Bing returns direct article URLs (no encoding or redirect tricks),
-    making downstream extraction with trafilatura straightforward.
 
-    Returns a list of dicts with keys: title, url, source, published.
+def _news_dedupe_key(title):
+    # Full normalized title (punctuation/case-insensitive). Do NOT truncate to
+    # a prefix - distinct stories that share a long common headline prefix
+    # (e.g. daily market recaps) would otherwise collapse into one.
+    return re.sub(r"[^\w\s]", "", (title or "").lower()).strip()
+
+
+def fetch_bing_news_rss(query, session, max_items=15):
+    """Fetch news candidates from Bing News RSS.
+
+    Returns a list of dicts: title, url (decoded publisher URL), source,
+    published, desc (RSS snippet), origin.
     """
     feed_url = BING_NEWS_RSS_BASE.format(query=quote(query))
     logging.info(f"Fetching Bing News RSS for: '{query}'")
@@ -405,23 +474,69 @@ def fetch_bing_news_rss(query, session, max_items=8):
 
     for item in items[:max_items]:
         title = extract_tag_text(item, "title") or "Untitled"
-        link = extract_tag_text(item, "link")
+        link = _decode_bing_url(extract_tag_text(item, "link"))
         pub_date = extract_tag_text(item, "pubDate")
+        desc = clean_social_noise(html_to_text(extract_tag_text(item, "description")))
         source_tag = find_first_tag(item, "news:source", "source")
         source = (
             normalize_whitespace(source_tag.get_text(" ", strip=True))
             if source_tag
-            else "Unknown"
+            else ""
         )
-
         if not link:
             continue
+        results.append({
+            "title": title,
+            "url": link,
+            "source": source or source_name_from_url(link),
+            "published": pub_date,
+            "desc": desc,
+            "origin": "Bing",
+        })
 
+    return results
+
+
+def fetch_google_news_rss(query, session, max_items=10):
+    """Second discovery source, used to top up when Bing is thin/blocked.
+
+    Google News wraps links in an encoded redirect; we keep that URL as-is
+    (it resolves in a browser) and rely on the title/source/snippet.
+    """
+    feed_url = GOOGLE_NEWS_RSS_BASE.format(query=quote(query))
+    logging.info(f"Fetching Google News RSS for: '{query}'")
+    try:
+        resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
+        resp.raise_for_status()
+    except Exception as exc:
+        logging.error(f"Google News RSS fetch failed for '{query}': {exc}")
+        return []
+
+    soup = BeautifulSoup(resp.content, "xml")
+    items = soup.find_all("item")
+    logging.info(f"Found {len(items)} Google News items for '{query}'")
+    results = []
+
+    for item in items[:max_items]:
+        title = extract_tag_text(item, "title") or "Untitled"
+        link = extract_tag_text(item, "link")
+        pub_date = extract_tag_text(item, "pubDate")
+        desc = clean_social_noise(html_to_text(extract_tag_text(item, "description")))
+        source_tag = find_first_tag(item, "source")
+        source = (
+            normalize_whitespace(source_tag.get_text(" ", strip=True))
+            if source_tag
+            else "Google News"
+        )
+        if not link:
+            continue
         results.append({
             "title": title,
             "url": link,
             "source": source,
             "published": pub_date,
+            "desc": desc,
+            "origin": "GoogleNews",
         })
 
     return results
@@ -431,82 +546,137 @@ def fetch_bing_news_rss(query, session, max_items=8):
 
 
 def build_news_section():
+    """Build the news section.
+
+    Core strategy:
+      1. Gather candidates from Bing News RSS (real publisher URLs). Top up
+         from Google News RSS if Bing's *recent* yield is thin (or blocked).
+      2. PREFER full-text: extract each candidate's body, skipping JS-only
+         hosts (msn.com) that can never yield text.
+      3. FALL BACK to the RSS headline+snippet for any slot not filled with
+         full text (richest snippets first). A category is therefore never
+         empty just because extraction failed.
+    """
     lines = []
     query_list = list(NEWS_QUERIES.items())
 
-    # Enterprise standard: Use connection pooling and persistent TLS spoofing
-    with requests.Session(impersonate="chrome110") as session:
+    # Persistent TLS impersonation + connection pooling across the section.
+    with requests.Session(impersonate=IMPERSONATE) as session:
         session.headers.update(HEADERS)
 
         for idx, (category, query) in enumerate(query_list):
             lines.append(f"### {category.upper()} ###")
-            added = 0
-            seen_urls = set()
 
             try:
-                results = fetch_bing_news_rss(query, session)
+                candidates = fetch_bing_news_rss(query, session)
             except Exception as exc:
+                logging.error(f"News fetch error for '{category}': {exc}")
                 lines.append(f"News fetch error: {exc}")
                 lines.append("")
                 if idx < len(query_list) - 1:
                     time.sleep(NEWS_FETCH_DELAY)
                 continue
 
-            if not results:
-                lines.append("No results returned from Bing News RSS.")
-                lines.append("")
-                if idx < len(query_list) - 1:
-                    time.sleep(NEWS_FETCH_DELAY)
-                continue
+            # Top up from a second source if Bing's recent yield is thin, so a
+            # feed full of stale evergreen results still triggers the backfill.
+            # Count only items with a parseable, in-window date so undated
+            # items can't inflate the count and suppress the top-up.
+            recent_keys = {
+                _news_dedupe_key(c["title"])
+                for c in candidates
+                if c["published"]
+                and parse_datetime(c["published"]) is not None
+                and is_recent(c["published"])
+            }
+            if len(recent_keys) < NEWS_ITEM_TARGET + 2:
+                candidates += fetch_google_news_rss(query, session)
 
-            for result in results:
-                if added >= NEWS_ITEM_TARGET:
+            chosen = []
+            snippet_pool = []
+            seen = set()
+            attempts = 0
+            stale = 0
+
+            for item in candidates[:NEWS_CANDIDATE_CAP]:
+                if len(chosen) >= NEWS_ITEM_TARGET:
                     break
 
-                url = result["url"]
-                title = result["title"]
-                published = result["published"]
-                source = result["source"]
-
-                if published and not is_recent(published):
-                    logging.info(f"Skipping (not recent): {title[:60]}")
+                if item["published"] and not is_recent(item["published"]):
+                    stale += 1
                     continue
 
-                if url in seen_urls:
+                key = _news_dedupe_key(item["title"])
+                if not key or key in seen:
                     continue
-                seen_urls.add(url)
-                logging.info(f"Fetching Article: {url[:80]}...")
+                seen.add(key)
 
-                # Fetch article body via trafilatura, utilizing the shared session pool
-                body = fetch_article_text(url, session)
-                body_len = len(body) if body else 0
-                if not body or body_len < NEWS_BODY_MIN_LENGTH:
-                    logging.warning(
-                        f"Skipping (body too short, {body_len} chars): "
-                        f"{title[:60]}"
-                    )
-                    continue
-
-                if not source or source == "Unknown":
-                    source = source_name_from_url(url)
-
-                lines.extend([
-                    f"TITLE: {title}",
-                    f"SOURCE: {source}",
-                    f"PUBLISHED: {published or 'Unknown'}",
-                    f"URL: {url}",
-                    f"CONTENT: {truncate_text(body, NEWS_BODY_MAX_CHARS)}",
-                    "",
-                ])
-                added += 1
-
-            if added == 0 and not any(
-                "News fetch error" in l for l in lines[-3:]
-            ):
-                lines.append(
-                    "No recent articles met the extraction threshold."
+                host = urlparse(item["url"]).netloc.lower()
+                skip_fetch = (
+                    any(bad in host for bad in UNEXTRACTABLE_HOSTS)
+                    or attempts >= NEWS_MAX_FETCH_ATTEMPTS
                 )
+
+                body = None
+                if not skip_fetch:
+                    attempts += 1
+                    logging.info(f"Fetching Article: {item['url'][:80]}...")
+                    body = fetch_article_text(item["url"], session, favor_recall=True)
+                    time.sleep(0.5)  # gentle throttle between publisher hits
+
+                if body and len(body) >= NEWS_BODY_MIN_LENGTH:
+                    item["content"] = truncate_text(body, NEWS_BODY_MAX_CHARS)
+                    item["content_type"] = "full-text"
+                    chosen.append(item)
+                    logging.info(
+                        f"OK full-text ({len(body)} chars) [{item['origin']}] "
+                        f"{host}: {item['title'][:60]}"
+                    )
+                else:
+                    # No usable full text -> keep as a snippet-backfill candidate.
+                    snippet_pool.append(item)
+
+            # Backfill remaining slots with the best available snippet, richest
+            # first. Prefer the RSS description; fall back to the headline when
+            # the description is too thin (common for Google News items) so a
+            # slot can still be filled rather than left empty.
+            snippet_pool.sort(key=lambda it: -len(it["desc"]))
+            for item in snippet_pool:
+                if len(chosen) >= NEWS_ITEM_TARGET:
+                    break
+                snippet = (
+                    item["desc"]
+                    if len(item["desc"]) >= NEWS_SNIPPET_MIN_LENGTH
+                    else item["title"]
+                )
+                if not snippet:
+                    continue
+                item["content"] = truncate_text(snippet, NEWS_BODY_MAX_CHARS)
+                item["content_type"] = "snippet"
+                chosen.append(item)
+                logging.info(
+                    f"OK snippet ({len(snippet)} chars) [{item['origin']}]: "
+                    f"{item['title'][:60]}"
+                )
+
+            logging.info(
+                f"[{category}] chosen={len(chosen)} (target {NEWS_ITEM_TARGET}), "
+                f"stale_skipped={stale}, fetch_attempts={attempts}"
+            )
+
+            if not chosen:
+                lines.append("No recent articles found for this query.")
                 lines.append("")
+            else:
+                for item in chosen:
+                    tag = "" if item["content_type"] == "full-text" else " (headline summary)"
+                    lines.extend([
+                        f"TITLE: {item['title']}",
+                        f"SOURCE: {item['source']}{tag}",
+                        f"PUBLISHED: {item['published'] or 'Unknown'}",
+                        f"URL: {item['url']}",
+                        f"CONTENT: {item['content']}",
+                        "",
+                    ])
 
             # Polite delay between category fetches
             if idx < len(query_list) - 1:
@@ -584,7 +754,7 @@ def fetch_rss_episode(show_name, feed_url, session):
 
     page_content = None
     if link and link.startswith("http") and not link.endswith(".mp3"):
-        page_content = fetch_article_text(link)
+        page_content = fetch_article_text(link, session)
         if page_content:
             page_content = clean_social_noise(page_content)
 
@@ -662,7 +832,7 @@ def build_report():
         build_news_section(),
     ]
 
-    with requests.Session(impersonate="chrome110") as session:
+    with requests.Session(impersonate=IMPERSONATE) as session:
         session.headers.update(HEADERS)
         sections.append(build_podcast_section(session))
 
