@@ -1,17 +1,24 @@
 import datetime as dt
 import html
+import logging
 import re
 import time
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import parse_qs, quote, urlparse
 
-import requests
+from curl_cffi import requests
 import trafilatura
 from bs4 import BeautifulSoup
 from youtube_transcript_api import YouTubeTranscriptApi
 
 # ── CONFIGURATION ─────────────────────────────────────────────────────────────
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 PODCAST_FEEDS = {
     "The Loonie Hour (Vancouver/Canada Macro)": {
@@ -32,8 +39,7 @@ PODCAST_FEEDS = {
 NEWS_QUERIES = {
     "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
     "International & Emerging": "emerging markets international equities",
-    "Competitor Pulse": "Wealthsimple Questrade",
-    "AI Wealth Management": "AI wealth management",
+    "Competitor & AI Pulse": "Wealthsimple Questrade AI wealth management",
 }
 
 HEADERS = {
@@ -301,17 +307,23 @@ def fetch_youtube_transcript(url_or_id):
     return cleaned or None
 
 
-def fetch_article_text(url):
+def fetch_article_text(url, session=None):
     try:
-        downloaded = trafilatura.fetch_url(url)
-        if not downloaded:
+        if session:
+            response = session.get(url, timeout=REQUEST_TIMEOUT)
+        else:
+            response = requests.get(url, impersonate="chrome110", timeout=REQUEST_TIMEOUT)
+            
+        if response.status_code != 200:
+            logging.warning(f"Failed to fetch {url}: HTTP {response.status_code}")
             return None
         extracted = trafilatura.extract(
-            downloaded, include_comments=False, include_links=False
+            response.text, include_comments=False, include_links=False
         )
         cleaned = normalize_whitespace(extracted)
         return cleaned or None
-    except Exception:
+    except Exception as exc:
+        logging.error(f"Error extracting text from {url}: {exc}")
         return None
 
 
@@ -378,17 +390,17 @@ def fetch_bing_news_rss(query, session, max_items=8):
     Returns a list of dicts with keys: title, url, source, published.
     """
     feed_url = BING_NEWS_RSS_BASE.format(query=quote(query))
-    print(f"  [Bing News] Fetching: {feed_url}")
+    logging.info(f"Fetching Bing News RSS for: '{query}'")
     try:
         resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
     except Exception as exc:
-        print(f"  [Bing News] RSS fetch failed for '{query}': {exc}")
+        logging.error(f"Bing News RSS fetch failed for '{query}': {exc}")
         return []
 
     soup = BeautifulSoup(resp.content, "xml")
     items = soup.find_all("item")
-    print(f"  [Bing News] Found {len(items)} items for '{query}'")
+    logging.info(f"Found {len(items)} Bing News items for '{query}'")
     results = []
 
     for item in items[:max_items]:
@@ -422,7 +434,8 @@ def build_news_section():
     lines = []
     query_list = list(NEWS_QUERIES.items())
 
-    with requests.Session() as session:
+    # Enterprise standard: Use connection pooling and persistent TLS spoofing
+    with requests.Session(impersonate="chrome110") as session:
         session.headers.update(HEADERS)
 
         for idx, (category, query) in enumerate(query_list):
@@ -456,20 +469,20 @@ def build_news_section():
                 source = result["source"]
 
                 if published and not is_recent(published):
-                    print(f"  [Skip] Not recent: {title[:60]}")
+                    logging.info(f"Skipping (not recent): {title[:60]}")
                     continue
 
                 if url in seen_urls:
                     continue
                 seen_urls.add(url)
-                print(f"  [Fetching] {url[:80]}")
+                logging.info(f"Fetching Article: {url[:80]}...")
 
-                # Fetch article body via trafilatura
-                body = fetch_article_text(url)
+                # Fetch article body via trafilatura, utilizing the shared session pool
+                body = fetch_article_text(url, session)
                 body_len = len(body) if body else 0
                 if not body or body_len < NEWS_BODY_MIN_LENGTH:
-                    print(
-                        f"  [Skip] Body too short ({body_len} chars): "
+                    logging.warning(
+                        f"Skipping (body too short, {body_len} chars): "
                         f"{title[:60]}"
                     )
                     continue
@@ -649,7 +662,7 @@ def build_report():
         build_news_section(),
     ]
 
-    with requests.Session() as session:
+    with requests.Session(impersonate="chrome110") as session:
         session.headers.update(HEADERS)
         sections.append(build_podcast_section(session))
 
@@ -657,9 +670,10 @@ def build_report():
 
 
 def fetch_content(output_file=OUTPUT_FILE):
+    logging.info("Starting Oceanfront Market Intelligence Generation...")
     report = build_report()
     output_file.write_text(report, encoding="utf-8")
-    print(f"Intelligence report written to {output_file}")
+    logging.info(f"Intelligence report successfully written to {output_file}")
 
 
 if __name__ == "__main__":
