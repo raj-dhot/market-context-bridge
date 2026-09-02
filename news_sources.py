@@ -199,8 +199,15 @@ PUBLISHER_FEEDS = {
         # VERIFIED healthy from CI, 150 items.
         ("BetaKit", "https://betakit.com/feed/"),
         # Advisor's Edge, the Canadian advisor trade paper. RSS 2.0.
-        # BROWSER-VERIFIED, CI-UNPROVEN: see the Investment Executive note.
+        # BROWSER-VERIFIED, CI-UNPROVEN. Absent from the 2026-09-02 output
+        # while BetaKit appeared, which means it almost certainly 403s from
+        # the runner like Investment Executive. Confirm with --check-feeds.
         ("Advisor.ca", "https://www.advisor.ca/feed/"),
+        # VERIFIED 2026-09-02: RSS 2.0. Canadian fintech trade press, and the
+        # publication that covered Questrade's agentic finance launch. Added
+        # because this category starved on 2026-09-02 and fell back to
+        # aggregator stubs.
+        ("Fintech.ca", "https://www.fintech.ca/feed/"),
 
         # DISABLED 2026-09-02 after failing CI preflight with HTTP 403:
         #   investmentexecutive.com/feed/
@@ -312,6 +319,23 @@ EXCLUDE_TERMS = (
     "museum", "counterfeit", "career", "scholarship", "job posting",
     "bank note", "banknote", "unclaimed", "labour negotiation",
     "award", "obituary", "appointment to the board",
+
+    # ROUNDUPS, RANKINGS AND COMPARISON LISTICLES. These are SEO evergreen
+    # content, not developments: "Best Online Brokerages In Canada For 2026"
+    # reached the 2026-09-02 output and is of no use to an advisor. Nothing
+    # happened, nobody announced anything, and the page exists to rank for a
+    # search term. They also skew heavily toward the aggregators, since that
+    # is the kind of page Google News surfaces for a product query.
+    #
+    # A brokerage comparison table is specifically NOT wanted even in the
+    # Competitor category: the brief needs to know what a competitor DID, not
+    # where a review site placed them.
+    "best online", "best broker", "best robo", "best credit card",
+    "best savings", "best etf", "best mutual fund", "best stocks",
+    "top 5", "top 10", "top 20", "top-5", "top-10",
+    "ranked", "ranking", "comparison", " vs ", " vs.",
+    "guide to", "how to", "everything you need to know",
+    "what you need to know", "explained",
 )
 
 # Per-category exclusions, applied ON TOP of EXCLUDE_TERMS and to the TITLE
@@ -343,6 +367,23 @@ CATEGORY_EXCLUDE = {
         "obituary", "recall notice",
     ),
 }
+
+# Categories where an EMPTY section beats a section full of aggregator stubs,
+# so fetch_news.py must NOT top up from Bing / Google News when they run thin.
+#
+# Competitor & AI Pulse is the case. SKILL.md section 1 already defines a
+# clean path for an empty one: the AI objection script runs on the standing
+# question with no news hook, and that is a normal month rather than a
+# degraded one. Given that, a stub costs more than it returns. It occupies a
+# slot, it cannot be cited, it pulls research time into recovering a headline,
+# and on 2026-09-02 it delivered a "Best Online Brokerages" listicle and a
+# Google News redirect where the section should simply have been empty.
+#
+# The market categories keep their fallback: a thin Canada or US section is a
+# real problem and a stub there is at least a lead worth searching.
+NO_AGGREGATOR_FALLBACK = frozenset({
+    "Competitor & AI Pulse",
+})
 
 FEED_TIMEOUT = 20          # per-feed fetch
 FEED_DELAY = 1.0           # politeness between feeds
