@@ -82,7 +82,8 @@ PODCAST_FEEDS = {
 # treats a raw "OR" literally and returns ZERO results. Use plain space-
 # separated keywords instead.
 NEWS_QUERIES = {
-    "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
+    "Canada (TSX & Macro)": "TSX Bank of Canada inflation GDP",
+    "United States (S&P 500 & Fed)": "S&P 500 Federal Reserve inflation jobs",
     "International & Emerging": "emerging markets international equities",
     "Competitor & AI Pulse": "Wealthsimple Questrade AI wealth management Canada",
 }
