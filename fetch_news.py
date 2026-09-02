@@ -1,456 +1,942 @@
-"""
-news_sources.py  --  origin-publisher RSS discovery for the Advisor Pulse.
-
-Drop this next to fetch_news.py in the GitHub repo. See FETCH_NEWS_PATCH.md
-for the three edits that wire it in.
-
-    python3 news_sources.py --check-feeds      # validate every feed, exit 1 on failure
-
-
-WHY THIS EXISTS
-===============
-The fetcher discovered articles from two search aggregators:
-
-    BING_NEWS_RSS_BASE   = bing.com/news/search?q={query}&format=rss
-    GOOGLE_NEWS_RSS_BASE = news.google.com/rss/search?q={query}
-
-Each is structurally biased toward its own unextractable property. Bing News
-is a Microsoft product that heavily indexes MSN, also Microsoft, whose article
-body is JavaScript-rendered and absent from the HTML. Google News RSS returns
-Google's own opaque CBMi... redirect stubs, which are not the article. Both
-hosts are therefore in UNEXTRACTABLE_HOSTS and fall back to a bare headline.
-
-So the 6-of-9 unusable rate was not bad luck. It was the architecture: the
-fetcher asked two aggregators for links and each handed back links to itself.
-On both 2026-09-01 and 2026-09-02 the same shape appeared, 3 MSN stubs plus 3
-Google stubs, with NORTH AMERICA and COMPETITOR & AI PULSE entirely unusable.
-
-Escalating the scraper does not fix this. A headless browser would render MSN,
-but MSN is an aggregator syndicating The Canadian Press, and SKILL.md section 4
-forbids sourcing a headline figure from an aggregator. You would be building a
-browser to render pages the brief is not allowed to quote.
-
-THE FIX: ask the publishers directly. Every feed below is an origin publisher
-that SKILL.md's own source hierarchy already prefers, serving static XML with
-canonical URLs. Real bodies for trafilatura, no JS, no redirect stubs, no
-bot hostility, no API key, no cost, and NO NEW DEPENDENCIES: this module needs
-only BeautifulSoup and the session that fetch_news.py already builds.
-
-THE TRADE-OFF, STATED HONESTLY. Publisher feeds are topic-broad rather than
-query-targeted, so keyword targeting moves client-side into
-matches_category(). That is a real loss of precision and the reason the
-aggregators are KEPT as a top-up path rather than deleted: if a category comes
-up short on citable items, fetch_news.py still falls back to them. The goal is
-to raise the floor of usable input, not to eliminate search.
-"""
-
-from __future__ import annotations
-
+import datetime as dt
+import html
 import logging
-import sys
+import re
 import time
-from urllib.parse import urlparse
+from email.utils import parsedate_to_datetime
+from pathlib import Path
+from urllib.parse import parse_qs, quote, urlparse
 
+from curl_cffi import requests
+import trafilatura
 from bs4 import BeautifulSoup
+from youtube_transcript_api import YouTubeTranscriptApi
 
-try:
-    from curl_cffi import requests
-except ImportError:                                          # pragma: no cover
-    requests = None
+# ── CONFIGURATION ─────────────────────────────────────────────────────────────
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-# FEED REGISTRY
-# ══════════════════════════════════════════════════════════════════════════════
-#
-# VERIFIED means the URL was confirmed on 2026-09-02, most authoritatively for
-# the Bank of Canada, whose paths were read off the Bank's own RSS index at
-# bankofcanada.ca/rss-feeds. UNVERIFIED feeds are commented out: they are
-# plausible and desirable but were NOT confirmed, and a wrong URL is a silently
-# dead category. Run --check-feeds, then uncomment whatever passes.
-#
-# Ordering matters. Items are gathered in list order and the primary
-# institution comes first, which matches the source hierarchy in SKILL.md
-# section 4: primary institution, then major outlet with a named desk, then
-# reputable specialist.
-
-PUBLISHER_FEEDS = {
-    "North America (TSX & S&P 500)": [
-        # --- primary institutions (top of the source hierarchy) -------------
-        ("Bank of Canada",
-         "https://www.bankofcanada.ca/content_type/press-releases/feed/"),
-        ("Bank of Canada",
-         "https://www.bankofcanada.ca/utility/news/feed/"),
-        ("Statistics Canada",
-         "https://www150.statcan.gc.ca/n1/rss/dai-quo/0-eng.atom"),
-        # --- major outlets, named desks -------------------------------------
-        ("CBC Business",
-         "https://www.cbc.ca/webfeed/rss/rss-business"),
-        # VERIFIED 2026-09-02: returns RSS 2.0 XML.
-        ("Financial Post",
-         "https://financialpost.com/feed/"),
-        # CONFIRMED DEAD 2026-09-02, do not retry:
-        #   theglobeandmail.com/business/?service=rss  -> serves the HTML
-        #     Report on Business page, not XML. The ?service=rss pattern works
-        #     on some Globe paths but not this one, and the Globe is paywalled
-        #     anyway so trafilatura would get a teaser at best.
-    ],
-
-    "International & Emerging": [
-        ("CBC Business",
-         "https://www.cbc.ca/webfeed/rss/rss-business"),
-        ("Bank of Canada",
-         "https://www.bankofcanada.ca/content_type/publications/feed/"),
-        # UNVERIFIED. Reuters withdrew most public RSS around 2020-2023, so
-        # treat any Reuters feed as unlikely until --check-feeds says otherwise.
-        # ("Reuters Business", "https://www.reuters.com/business/rss"),
-    ],
-
-    # This category is the one the aggregators served worst and it is the
-    # anchor for the AI objection script every month. BetaKit carried the best
-    # competitor development in BOTH recent editions (Questrade's agentic
-    # finance launch), and both times it arrived as an unreadable Google stub
-    # that had to be recovered by hand. Subscribing directly to the source
-    # that keeps winning is the single highest-value change in this file.
-    # This category anchors the AI objection script every month, so it needs a
-    # tech-first source AND an advisor-trade source. BetaKit alone is
-    # tech-first and will miss advice-industry and regulatory stories.
-    "Competitor & AI Pulse": [
-        # VERIFIED healthy from CI, 150 items.
-        ("BetaKit", "https://betakit.com/feed/"),
-        # Advisor's Edge, the Canadian advisor trade paper. Returns RSS 2.0.
-        # BROWSER-VERIFIED ONLY, CI-UNPROVEN: see the Investment Executive
-        # note below for why that distinction matters. The preflight decides.
-        ("Advisor.ca", "https://www.advisor.ca/feed/"),
-        # Consumer personal-finance, Canadian. Lower tier than the trades, so
-        # useful for retail sentiment rather than headline figures. Enable if
-        # the category still runs thin. Browser-verified, CI-unproven.
-        # ("MoneySense", "https://www.moneysense.ca/feed/"),
-
-        # DISABLED 2026-09-02 after failing CI preflight with HTTP 403:
-        #   investmentexecutive.com/feed/
-        # It returns valid RSS 2.0 from a normal browser and 403 from a
-        # GitHub Actions runner. That is IP-reputation blocking, not TLS
-        # fingerprinting, so curl_cffi impersonation cannot recover it: the
-        # fetcher's own header comment already warned that datacenter IPs get
-        # rejected by some publishers. THE LESSON, worth keeping: verifying a
-        # feed from a browser does NOT prove the runner can reach it. Only
-        # --check-feeds run in CI proves that. Do not re-enable without a
-        # green CI preflight.
-        #
-        # CONFIRMED DEAD, do not retry:
-        #   investmentexecutive.com/rss-feeds/  -> 404 (the listing page
-        #     search engines still index; /feed/ exists but 403s from CI)
-        #   wealthprofessional.ca/feed          -> 404
-    ],
-}
-
-
-# Publisher feeds carry everything the desk published, so relevance is filtered
-# here instead of by a search engine. A candidate is kept when its title or
-# snippet contains any term. Keep terms broad: a false positive is a wasted
-# extraction attempt, while a false negative silently drops the month's story.
-CATEGORY_KEYWORDS = {
-    "North America (TSX & S&P 500)": [
-        "tsx", "s&p", "stock", "equit", "market", "index", "wall street",
-        "interest rate", "policy rate", "inflation", "cpi", "gdp",
-        "recession", "bond", "yield", "earnings", "dollar", "loonie",
-        "tariff", "trade", "federal reserve", "monetary policy",
-        # NOT "bank of canada": on a Bank of Canada feed the institution name
-        # matches every item, including the museum's opening hours, so it
-        # discriminates nothing. NOT bare "fed" either: it substring-matches
-        # "feed", "federated" and "federal" and would pass anything.
-    ],
-    "International & Emerging": [
-        "emerging", "international", "global", "china", "india", "japan",
-        "europe", "euro", "asia", "latin america", "brazil", "mexico",
-        "oil", "commodit", "currency", "geopolit", "imf", "world bank",
-        "msci", "export", "supply chain",
-    ],
-    "Competitor & AI Pulse": [
-        "wealthsimple", "questrade", "robo", "advisor", "adviser",
-        "wealth management", "brokerage", "fintech", "fin tech",
-        "artificial intelligence", "agentic", "automat", "robinhood",
-        "invest", "portfolio", "ci direct", "investease", "smartfolio",
-        "planner", "fee", "custodian",
-        # Bare "ai" is deliberately NOT a term: it substring-matches "said",
-        # "rail", "detail", "campaign" and would pass almost every headline.
-    ],
-}
-
-# Institutional feeds carry corporate housekeeping alongside the economics:
-# museum hours, counterfeit awards, job postings, bank-note design. Those
-# items often match an include term (or the institution's own name) while
-# being useless to the brief, so they are excluded outright. Applied AFTER
-# the include filter and to the title only, so a passing mention in an
-# article body cannot drop a real story.
-EXCLUDE_TERMS = (
-    "museum", "counterfeit", "career", "scholarship", "job posting",
-    "bank note", "banknote", "unclaimed", "labour negotiation",
-    "award", "obituary", "appointment to the board",
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-FEED_TIMEOUT = 20          # per-feed fetch
-FEED_DELAY = 1.0           # politeness between feeds
-FEED_MAX_ITEMS = 40        # per feed, before filtering
+# Origin-publisher RSS discovery. SOFT import on purpose.
+#
+# If news_sources.py has not landed yet (or was renamed), a hard import would
+# raise at module load and kill the month outright. Degrading to the old
+# aggregator-only path instead still produces a file, the workflow's feed
+# preflight step already warned, and the CITABLE gate in the health check will
+# catch the degraded yield. Loud, not fatal.
+try:
+    import news_sources as nsrc
+    PUBLISHER_FEEDS_AVAILABLE = True
+except ImportError as _exc:
+    nsrc = None
+    PUBLISHER_FEEDS_AVAILABLE = False
+    logging.error(
+        "news_sources.py could not be imported (%s). Falling back to "
+        "aggregator-only discovery, which yields uncitable MSN and Google "
+        "News stubs. Put news_sources.py next to fetch_news.py.", _exc
+    )
+
+# curl_cffi impersonation target. Kept as a hedge: on GitHub Actions
+# (datacenter IPs) some publishers reject non-browser TLS fingerprints, and
+# impersonation can recover those extractions. It does NOT help with msn.com
+# (whose body is JavaScript-rendered and simply absent from the HTML), which is
+# why those are skipped entirely below.
+IMPERSONATE = "chrome124"
+
+PODCAST_FEEDS = {
+    "The Loonie Hour (Vancouver/Canada Macro)": {
+        "youtube": "https://www.youtube.com/feeds/videos.xml?channel_id=UCdpU4qvzypmjZbbcLiPWV8A",
+        "rss": "https://anchor.fm/s/103db19ac/podcast/rss",
+    },
+    "All-In Podcast (Tech/Global Macro)": {
+        "youtube": "https://www.youtube.com/feeds/videos.xml?channel_id=UCESLZhusAkFfsNsApnjF_Cg",
+    },
+    "Rational Reminder (Canada Investing)": {
+        "rss": "https://rationalreminder.libsyn.com/rss",
+    },
+    "The Compound & Friends (US Retail Sentiment)": {
+        "rss": "https://feeds.megaphone.fm/TCP4771071679",
+    },
+}
+
+# FALLBACK ONLY as of 2026-09-02. Origin-publisher feeds in news_sources.py are
+# the primary discovery path; these queries now only top up a category whose
+# publisher feeds came back with too few EXTRACTABLE items.
+#
+# Why the demotion: Bing News is a Microsoft product that heavily indexes MSN,
+# also Microsoft, whose article body is JavaScript-rendered and absent from the
+# HTML. Google News RSS returns Google's own opaque redirect stubs. Both hosts
+# are therefore in UNEXTRACTABLE_HOSTS and fall back to a bare headline. Asking
+# two aggregators for links got back links to themselves: 6 of 9 items arrived
+# uncitable on both 2026-09-01 and 2026-09-02, with two of three categories
+# entirely unusable.
+#
+# The keys MUST stay identical to news_sources.PUBLISHER_FEEDS keys. They are
+# matched by string. A renamed category here silently disables its publisher
+# feeds and drops that category back to aggregator search with no error.
+#
+# NOTE: Do NOT use the boolean operator "OR" in these queries. Bing News RSS
+# treats a raw "OR" literally and returns ZERO results. Use plain space-
+# separated keywords instead.
+NEWS_QUERIES = {
+    "North America (TSX & S&P 500)": "TSX S&P 500 stock market",
+    "International & Emerging": "emerging markets international equities",
+    "Competitor & AI Pulse": "Wealthsimple Questrade AI wealth management Canada",
+}
+
+# Do NOT set a User-Agent here. curl_cffi's impersonate=IMPERSONATE already
+# installs a complete, self-consistent browser header set (User-Agent + the
+# matching sec-ch-ua hints) that lines up with its TLS/JA3 fingerprint.
+# Overriding the User-Agent by hand desynchronizes those and can actually
+# TRIGGER the anti-bot challenges we are trying to avoid. Only add headers
+# that impersonation does not already cover.
+HEADERS = {
+    "Accept-Language": "en-CA,en;q=0.9",
+}
+
+BING_NEWS_RSS_BASE = "https://www.bing.com/news/search?q={query}&format=rss&count=15"
+# Second, independent discovery source. Used to top up a category when Bing
+# returns too few recent candidates (or is blocked/empty).
+GOOGLE_NEWS_RSS_BASE = (
+    "https://news.google.com/rss/search?q={query}&hl=en-CA&gl=CA&ceid=CA:en"
+)
+
+# Hosts we never try to full-text extract; we go straight to the RSS
+# headline/snippet instead. Two reasons a host lands here:
+#   * msn.com  - body is JavaScript-rendered and absent from static HTML
+#                (verified: no articleBody/JSON-LD/embedded data; content API
+#                returns HTTP 400). Unrecoverable by scraping.
+#   * news.google.com - Google News links are opaque redirect stubs, not the
+#                article; extraction always yields ~nothing, so fetching them
+#                just wastes time. Use their title/snippet directly instead.
+UNEXTRACTABLE_HOSTS = ("msn.com", "news.google.com")
+
+REQUEST_TIMEOUT = 20           # RSS feed fetches
+ARTICLE_TIMEOUT = 12           # individual article-body fetches (bound CI time)
+NEWS_ITEM_TARGET = 3           # articles to surface per category
+NEWS_CANDIDATE_CAP = 25        # max RSS items to consider per category
+NEWS_MAX_FETCH_ATTEMPTS = 8    # max full-text extraction attempts per category
+NEWS_LOOKBACK_DAYS = 31        # trailing month, to match the monthly brief
+NEWS_BODY_MIN_LENGTH = 300     # min chars to count an extraction as full text
+NEWS_SNIPPET_MIN_LENGTH = 80   # min chars for an RSS snippet to be usable
+NEWS_BODY_MAX_CHARS = 2000
+EPISODE_TEXT_MAX_CHARS = 4000
+OUTPUT_FILE = Path("latest_news.txt")
+YOUTUBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
+YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
+
+# Delay between news RSS fetches (be polite)
+NEWS_FETCH_DELAY = 2
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# HELPERS
-# ══════════════════════════════════════════════════════════════════════════════
+# ── TEXT HELPERS ───────────────────────────────────────────────────────────────
 
-def _text_of(parent, *names):
-    """First non-empty text among the named child tags. RSS and Atom differ in
-    tag names for the same concept, so callers pass every spelling."""
-    for name in names:
-        tag = parent.find(name)
-        if tag:
-            txt = tag.get_text(" ", strip=True)
-            if txt:
-                return " ".join(txt.split())
-    return ""
+def normalize_whitespace(text):
+    return re.sub(r"\s+", " ", text or "").strip()
 
 
-def _link_of(item):
-    """Best URL from an RSS <item> or an Atom <entry>.
-
-    Atom puts the URL in link/@href and may carry several rel= variants;
-    rel="alternate" (or absent) is the article. RSS puts it in link's text.
-    """
-    for tag in item.find_all("link"):
-        rel = (tag.get("rel") or ["alternate"])
-        rel = rel[0] if isinstance(rel, list) else rel
-        href = tag.get("href")
-        if href and rel in ("alternate", "self", None, ""):
-            return href.strip()
-        txt = tag.get_text(" ", strip=True)
-        if txt.startswith("http"):
-            return txt.strip()
-    guid = _text_of(item, "guid", "id")
-    return guid.strip() if guid.startswith("http") else None
+def truncate_text(text, max_chars):
+    text = normalize_whitespace(text)
+    if len(text) <= max_chars:
+        return text
+    shortened = text[:max_chars].rsplit(" ", 1)[0]
+    return (shortened or text[:max_chars]) + "..."
 
 
-def matches_category(item, terms):
-    """True when the item looks relevant to the category.
+def html_to_text(fragment):
+    if not fragment:
+        return ""
+    text = BeautifulSoup(
+        html.unescape(fragment), "html.parser"
+    ).get_text(" ", strip=True)
+    return normalize_whitespace(text)
 
-    Include terms match title OR snippet, so a story whose headline is coy
-    still qualifies on its summary. Exclude terms match the TITLE ONLY: a
-    real market story that happens to mention the word "award" in its body
-    must not be dropped.
-    """
-    title = str(item.get("title", "")).lower()
-    if any(bad in title for bad in EXCLUDE_TERMS):
-        return False
-    if not terms:
+
+def clean_social_noise(text):
+    """Remove URLs, social handles, hashtags, promo filler, disclaimers,
+    and zero-width / invisible unicode characters."""
+    cleaned = html.unescape(text or "")
+
+    # Zero-width / invisible unicode chars
+    cleaned = re.sub(r"[⁠‌‍﻿­]+", "", cleaned)
+
+    # Common emoji ranges
+    cleaned = re.sub(
+        r"[\U0001F300-\U0001FAD6\U0001F600-\U0001F64F"
+        r"\U0001F680-\U0001F6FF\U0001F900-\U0001F9FF"
+        r"☀-⛿✀-➿]+",
+        " ",
+        cleaned,
+    )
+
+    # URLs and emails
+    cleaned = re.sub(r"https?://\S+", " ", cleaned)
+    cleaned = re.sub(r"www\.\S+", " ", cleaned)
+    cleaned = re.sub(r"\S+@\S+\.\S+", " ", cleaned)
+
+    # Social handles and hashtags
+    cleaned = re.sub(r"[@#]\S+", " ", cleaned)
+
+    # Common promo / filler patterns
+    for pattern in (
+        r"\bFollow(?:\s+(?:us|the besties|on))?\b[^.!\n]{0,150}",
+        r"\bIntro (?:Music|Video) Credit\b[^.!\n]{0,120}",
+        r"\bSign up for\b[^.!\n]{0,150}",
+        r"\bSubscribe\b[^.!\n]{0,100}",
+        r"\bInstagram:\s*\S*",
+        r"\bTwitter:\s*\S*",
+        r"\bLinkedIn:\s*\S*",
+        r"\bTikTok:\s*\S*",
+        r"\bGet Your Tickets Here!\s*",
+    ):
+        cleaned = re.sub(pattern, " ", cleaned, flags=re.IGNORECASE)
+
+    # Legal disclaimers (Compound-style boilerplate)
+    cleaned = re.sub(
+        r"(?:Public )?Disclosure:.*?(?:adchoices|disclosures)\b.*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    cleaned = re.sub(
+        r"This (?:podcast|episode) is for informational purposes.*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    cleaned = re.sub(
+        r"Investing involves (?:the )?risk.*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    cleaned = re.sub(
+        r"(?:Obviously )?[Nn]othing on this channel should be considered.*",
+        "",
+        cleaned,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+
+    # HTML entities that survived
+    cleaned = re.sub(r"&[a-z]+;", " ", cleaned)
+    cleaned = re.sub(r"&#\d+;", " ", cleaned)
+
+    return normalize_whitespace(cleaned)
+
+
+# ── DATE HELPERS ──────────────────────────────────────────────────────────────
+
+def parse_datetime(value):
+    if not value:
+        return None
+    candidate = value.strip()
+    parsers = [
+        lambda raw: dt.datetime.fromisoformat(raw.replace("Z", "+00:00")),
+        parsedate_to_datetime,
+    ]
+    for parser in parsers:
+        try:
+            return parser(candidate)
+        except (TypeError, ValueError, IndexError):
+            continue
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return dt.datetime.strptime(candidate, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def is_recent(value, days=NEWS_LOOKBACK_DAYS):
+    published_at = parse_datetime(value)
+    if published_at is None:
         return True
-    hay = "%s %s" % (title, str(item.get("desc", "")).lower())
-    return any(t in hay for t in terms)
+    if published_at.tzinfo is None:
+        published_at = published_at.replace(tzinfo=dt.timezone.utc)
+    cutoff = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+    return published_at >= cutoff
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# FETCH
-# ══════════════════════════════════════════════════════════════════════════════
+# ── XML / RSS HELPERS ─────────────────────────────────────────────────────────
 
-def fetch_publisher_rss(publisher, feed_url, session, *,
-                        html_to_text, clean_noise,
-                        max_items=FEED_MAX_ITEMS, timeout=FEED_TIMEOUT):
-    """Fetch one origin-publisher feed.
+def source_name_from_url(url):
+    if not url:
+        return "Unknown"
+    hostname = urlparse(url).netloc.lower()
+    if hostname.startswith("www."):
+        hostname = hostname[4:]
+    return hostname or "Unknown"
 
-    Returns items in EXACTLY the dict shape fetch_bing_news_rss returns, so
-    build_news_section needs no change to its downstream handling:
-        {title, url, source, published, desc, origin}
 
-    html_to_text and clean_noise are injected rather than imported to keep
-    this module free of any dependency on fetch_news.py, which would otherwise
-    be a circular import.
-    """
-    logging.info("Fetching publisher feed: %s", publisher)
+def find_first_tag(parent, *names):
+    wanted = {name.split(":")[-1].lower() for name in names}
+    for recursive in (False, True):
+        for tag in parent.find_all(recursive=recursive):
+            tag_name = getattr(tag, "name", None)
+            if tag_name and tag_name.split(":")[-1].lower() in wanted:
+                return tag
+    return None
+
+
+def extract_tag_text(parent, *names):
+    tag = find_first_tag(parent, *names)
+    if not tag:
+        return ""
+    return normalize_whitespace(tag.get_text(" ", strip=True))
+
+
+# ── YOUTUBE HELPERS ───────────────────────────────────────────────────────────
+
+def extract_youtube_video_id(url_or_id):
+    if not url_or_id:
+        return None
+    candidate = url_or_id.strip()
+    if candidate.startswith("yt:video:"):
+        candidate = candidate.rsplit(":", 1)[-1]
+    if YOUTUBE_ID_PATTERN.fullmatch(candidate):
+        return candidate
+
+    parsed = urlparse(candidate)
+    hostname = parsed.netloc.lower()
+    path_parts = [part for part in parsed.path.split("/") if part]
+
+    if "youtu.be" in hostname and path_parts:
+        possible = path_parts[0]
+        if YOUTUBE_ID_PATTERN.fullmatch(possible):
+            return possible
+
+    if "youtube.com" in hostname or "youtube-nocookie.com" in hostname:
+        query_id = parse_qs(parsed.query).get("v", [None])[0]
+        if query_id and YOUTUBE_ID_PATTERN.fullmatch(query_id):
+            return query_id
+        if len(path_parts) >= 2 and path_parts[0] in {
+            "embed", "shorts", "live", "v",
+        }:
+            possible = path_parts[1]
+            if YOUTUBE_ID_PATTERN.fullmatch(possible):
+                return possible
+
+    match = re.search(
+        r"(?:v=|youtu\.be/|youtube\.com/(?:embed|shorts|live|v)/)"
+        r"([A-Za-z0-9_-]{11})",
+        candidate,
+    )
+    return match.group(1) if match else None
+
+
+def is_youtube_short(entry):
+    """Return True if the YouTube feed entry is a Short (not a full episode)."""
+    link = extract_item_link(entry)
+    if link and YOUTUBE_SHORTS_PATTERN.search(link):
+        return True
+    return False
+
+
+def fetch_youtube_transcript(url_or_id):
+    video_id = extract_youtube_video_id(url_or_id)
+    if not video_id:
+        return None
+
+    chunks = []
+    # Try the newer .fetch() API first
     try:
-        resp = session.get(feed_url, timeout=timeout)
+        api = YouTubeTranscriptApi()
+        if hasattr(api, "fetch"):
+            transcript = api.fetch(video_id)
+            for entry in transcript:
+                text = getattr(entry, "text", None)
+                if text is None and isinstance(entry, dict):
+                    text = entry.get("text")
+                if text:
+                    chunks.append(text)
+    except Exception:
+        chunks = []
+
+    # Fallback to legacy .get_transcript()
+    if not chunks:
+        try:
+            transcript = YouTubeTranscriptApi.get_transcript(video_id)
+            for entry in transcript:
+                text = entry.get("text")
+                if text:
+                    chunks.append(text)
+        except Exception:
+            return None
+
+    cleaned = clean_social_noise(" ".join(chunks))
+    return cleaned or None
+
+
+def fetch_article_text(url, session=None, favor_recall=False):
+    """Download an article and return its main text (str) or None.
+
+    Skips hosts whose body is JavaScript-rendered (see UNEXTRACTABLE_HOSTS).
+
+    favor_recall defaults to False so the pre-existing PODCAST caller
+    (fetch_rss_episode) keeps its original extraction behavior. The news
+    pipeline opts in with favor_recall=True so borderline article pages still
+    yield text.
+    """
+    host = urlparse(url).netloc.lower()
+    if any(bad in host for bad in UNEXTRACTABLE_HOSTS):
+        logging.info(f"Skipping unextractable host ({host}): {url[:80]}")
+        return None
+
+    try:
+        if session is not None:
+            response = session.get(url, timeout=ARTICLE_TIMEOUT)
+        else:
+            response = requests.get(
+                url, impersonate=IMPERSONATE, timeout=ARTICLE_TIMEOUT
+            )
+
+        if response.status_code != 200:
+            logging.warning(f"Failed to fetch {url[:80]}: HTTP {response.status_code}")
+            return None
+        extracted = trafilatura.extract(
+            response.text,
+            include_comments=False,
+            include_links=False,
+            favor_recall=favor_recall,
+        )
+        cleaned = normalize_whitespace(extracted)
+        return cleaned or None
+    except Exception as exc:
+        logging.error(f"Error extracting text from {url[:80]}: {exc}")
+        return None
+
+
+# ── RSS ITEM HELPERS ──────────────────────────────────────────────────────────
+
+def extract_item_link(item):
+    """Get the best URL from an RSS <item> or Atom <entry>."""
+    for link_tag in item.find_all("link", recursive=False):
+        href = link_tag.get("href")
+        if href:
+            return href.strip()
+        text = normalize_whitespace(link_tag.get_text(" ", strip=True))
+        if text and text.startswith("http"):
+            return text
+
+    guid_text = extract_tag_text(item, "guid", "id")
+    if guid_text:
+        if guid_text.startswith("http"):
+            return guid_text
+        video_id = extract_youtube_video_id(guid_text)
+        if video_id:
+            return f"https://www.youtube.com/watch?v={video_id}"
+
+    video_id = extract_tag_text(item, "yt:videoId", "videoId")
+    if video_id:
+        normalized = extract_youtube_video_id(video_id)
+        if normalized:
+            return f"https://www.youtube.com/watch?v={normalized}"
+
+    enclosure = find_first_tag(item, "enclosure")
+    if enclosure and enclosure.get("url"):
+        return enclosure["url"].strip()
+
+    return None
+
+
+def extract_episode_notes(item):
+    """Pull the richest text from an RSS item's description fields."""
+    for tag_names in (
+        ("content:encoded", "encoded"),
+        ("itunes:summary", "summary"),
+        ("description", "media:description"),
+    ):
+        tag = find_first_tag(item, *tag_names)
+        if not tag:
+            continue
+        raw = tag.decode_contents() or tag.get_text(" ", strip=True)
+        text = clean_social_noise(html_to_text(raw))
+        if text:
+            return text
+    return "No transcript or show notes available."
+
+
+# ── NEWS DISCOVERY (BING + GOOGLE NEWS RSS) ────────────────────────────────────
+
+def _decode_bing_url(link):
+    """Bing wraps each result in an apiclick.aspx redirect carrying the real
+    publisher URL in the `url=` query param. Decode it so we fetch the
+    publisher directly and can see the real host (e.g. detect msn.com)."""
+    if not link:
+        return link
+    if "bing.com/news/apiclick" in link:
+        real = parse_qs(urlparse(link).query).get("url", [None])[0]
+        if real:
+            return real
+    return link
+
+
+def _news_dedupe_key(title):
+    # Full normalized title (punctuation/case-insensitive). Do NOT truncate to
+    # a prefix - distinct stories that share a long common headline prefix
+    # (e.g. daily market recaps) would otherwise collapse into one.
+    return re.sub(r"[^\w\s]", "", (title or "").lower()).strip()
+
+
+def _is_extractable(item):
+    """True when the item is recent AND its body can actually be fetched.
+
+    Nothing in the old pipeline measured this, which is why two categories
+    could be entirely unusable while every check reported healthy. The old
+    top-up trigger counted items with an in-window DATE, so three MSN stubs
+    counted as three good candidates. It did still fire the top-up at that
+    count, but it topped up from a SECOND aggregator that returned more
+    stubs, so more fetching could not help: the candidate pool was 6 stubs
+    and 0 citable items.
+
+    A stub is a PRESENT item, not a missing one, so no degradation marker
+    fires for it. Counting extractability is what makes the difference
+    visible, and it is used twice below: to decide whether the aggregators
+    are needed at all, and to order candidates so a citable item is never
+    crowded out of a slot by a stub that merely sorted earlier.
+    """
+    if not item.get("published"):
+        return False
+    if parse_datetime(item["published"]) is None:
+        return False
+    if not is_recent(item["published"]):
+        return False
+    host = urlparse(item.get("url") or "").netloc.lower()
+    return not any(bad in host for bad in UNEXTRACTABLE_HOSTS)
+
+
+def fetch_bing_news_rss(query, session, max_items=15):
+    """Fetch news candidates from Bing News RSS.
+
+    Returns a list of dicts: title, url (decoded publisher URL), source,
+    published, desc (RSS snippet), origin.
+    """
+    feed_url = BING_NEWS_RSS_BASE.format(query=quote(query))
+    logging.info(f"Fetching Bing News RSS for: '{query}'")
+    try:
+        resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
         resp.raise_for_status()
-    except Exception as exc:                                 # noqa: BLE001
-        logging.error("Publisher feed failed (%s): %s", publisher, exc)
+    except Exception as exc:
+        logging.error(f"Bing News RSS fetch failed for '{query}': {exc}")
         return []
 
     soup = BeautifulSoup(resp.content, "xml")
-    entries = soup.find_all("item") or soup.find_all("entry")
-    logging.info("  %s: %d raw item(s)", publisher, len(entries))
+    items = soup.find_all("item")
+    logging.info(f"Found {len(items)} Bing News items for '{query}'")
+    results = []
 
-    out = []
-    for entry in entries[:max_items]:
-        title = _text_of(entry, "title") or "Untitled"
-        url = _link_of(entry)
-        if not url:
+    for item in items[:max_items]:
+        title = extract_tag_text(item, "title") or "Untitled"
+        link = _decode_bing_url(extract_tag_text(item, "link"))
+        pub_date = extract_tag_text(item, "pubDate")
+        desc = clean_social_noise(html_to_text(extract_tag_text(item, "description")))
+        source_tag = find_first_tag(item, "news:source", "source")
+        source = (
+            normalize_whitespace(source_tag.get_text(" ", strip=True))
+            if source_tag
+            else ""
+        )
+        if not link:
             continue
-        # RSS: pubDate. Atom: published, else updated.
-        published = _text_of(entry, "pubDate", "published", "updated",
-                             "dc:date")
-        raw_desc = _text_of(entry, "description", "summary", "content",
-                            "content:encoded")
-        desc = clean_noise(html_to_text(raw_desc)) if raw_desc else ""
-        out.append({
+        results.append({
             "title": title,
-            "url": url,
-            "source": publisher,          # real publisher, not an aggregator
-            "published": published,
+            "url": link,
+            "source": source or source_name_from_url(link),
+            "published": pub_date,
             "desc": desc,
-            "origin": "Publisher",
+            "origin": "Bing",
         })
-    return out
+
+    return results
 
 
-def gather_category(category, session, *, html_to_text, clean_noise,
-                    keyword_filter=True):
-    """All candidates for one category, from every configured publisher feed.
+def fetch_google_news_rss(query, session, max_items=10):
+    """Second discovery source, used to top up when Bing is thin/blocked.
 
-    Feed failures are logged and skipped rather than raised: one dead
-    publisher must not take out the category, which is the same
-    fail-soft posture the rest of the fetcher uses.
+    Google News wraps links in an encoded redirect; we keep that URL as-is
+    (it resolves in a browser) and rely on the title/source/snippet.
     """
-    feeds = PUBLISHER_FEEDS.get(category, [])
-    terms = CATEGORY_KEYWORDS.get(category, []) if keyword_filter else []
+    feed_url = GOOGLE_NEWS_RSS_BASE.format(query=quote(query))
+    logging.info(f"Fetching Google News RSS for: '{query}'")
+    try:
+        resp = session.get(feed_url, timeout=REQUEST_TIMEOUT)
+        resp.raise_for_status()
+    except Exception as exc:
+        logging.error(f"Google News RSS fetch failed for '{query}': {exc}")
+        return []
 
-    candidates, seen_urls = [], set()
-    for i, (publisher, feed_url) in enumerate(feeds):
-        items = fetch_publisher_rss(
-            publisher, feed_url, session,
-            html_to_text=html_to_text, clean_noise=clean_noise)
+    soup = BeautifulSoup(resp.content, "xml")
+    items = soup.find_all("item")
+    logging.info(f"Found {len(items)} Google News items for '{query}'")
+    results = []
 
-        kept = 0
-        for it in items:
-            if it["url"] in seen_urls:
-                continue          # same story in two feeds, e.g. CBC in both
-            if not matches_category(it, terms):
-                continue
-            seen_urls.add(it["url"])
-            candidates.append(it)
-            kept += 1
-        logging.info("  %s: %d kept after keyword filter", publisher, kept)
+    for item in items[:max_items]:
+        title = extract_tag_text(item, "title") or "Untitled"
+        link = extract_tag_text(item, "link")
+        pub_date = extract_tag_text(item, "pubDate")
+        desc = clean_social_noise(html_to_text(extract_tag_text(item, "description")))
+        source_tag = find_first_tag(item, "source")
+        source = (
+            normalize_whitespace(source_tag.get_text(" ", strip=True))
+            if source_tag
+            else "Google News"
+        )
+        if not link:
+            continue
+        results.append({
+            "title": title,
+            "url": link,
+            "source": source,
+            "published": pub_date,
+            "desc": desc,
+            "origin": "GoogleNews",
+        })
 
-        if i < len(feeds) - 1:
-            time.sleep(FEED_DELAY)
-
-    logging.info("[%s] %d publisher candidate(s) total", category,
-                 len(candidates))
-    return candidates
+    return results
 
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PREFLIGHT
-# ══════════════════════════════════════════════════════════════════════════════
+# ── NEWS SECTION ──────────────────────────────────────────────────────────────
 
-def check_feeds(verbose=True):
-    """Validate every configured feed.
+def build_news_section():
+    """Build the news section.
 
-    Returns (ok_count, failures, dead_categories).
-
-    Run this in CI before the scraper. A feed that 404s or stops being XML is
-    otherwise indistinguishable from a quiet news month: the category just
-    comes back thin and nobody knows why.
-
-    SEVERITY IS PER CATEGORY, NOT PER FEED. One publisher going dark while its
-    category still has healthy siblings is a warning; the run proceeds and
-    loses some diversity. A category with NO healthy feed is different in kind,
-    because it falls back to aggregator search and yields uncitable stubs,
-    which is the exact failure this module exists to prevent.
-
-    The distinction was added after the first CI preflight failed the whole
-    step over one 403 out of nine feeds. A check that cries wolf over a
-    survivable fault trains people to ignore it, and this one needs to be
-    believed on the month it reports something real.
+    Core strategy:
+      1. PRIMARY: gather candidates from origin-publisher RSS feeds
+         (news_sources.py). Real article bodies, canonical URLs, and
+         publishers that pass the SKILL.md section 4 source hierarchy by
+         construction.
+      2. FALLBACK: top up from Bing / Google News RSS only when the publisher
+         feeds did not yield enough EXTRACTABLE recent candidates.
+      3. PREFER full-text: extract each candidate's body, skipping JS-only
+         hosts (msn.com) that can never yield text.
+      4. FALL BACK to the RSS headline+snippet for any slot not filled with
+         full text (richest snippets first). A category is therefore never
+         empty just because extraction failed.
     """
-    if requests is None:
-        print("curl_cffi is not installed; run inside the fetcher's env.")
-        return 0, [("*", "curl_cffi missing")], list(PUBLISHER_FEEDS)
+    lines = []
+    query_list = list(NEWS_QUERIES.items())
 
-    failures, ok, dead_categories = [], 0, []
-    with requests.Session(impersonate="chrome124") as session:
-        session.headers.update({"Accept-Language": "en-CA,en;q=0.9"})
-        for category, feeds in PUBLISHER_FEEDS.items():
-            if verbose:
-                print("\n%s" % category)
-            cat_ok = 0
-            for publisher, url in feeds:
+    # Persistent TLS impersonation + connection pooling across the section.
+    with requests.Session(impersonate=IMPERSONATE) as session:
+        session.headers.update(HEADERS)
+
+        for idx, (category, query) in enumerate(query_list):
+            lines.append(f"### {category.upper()} ###")
+
+            # ── PRIMARY: origin-publisher feeds ─────────────────────────────
+            # A dead feed is logged and skipped inside gather_category rather
+            # than raised, so one publisher cannot take out the category.
+            candidates = []
+            if PUBLISHER_FEEDS_AVAILABLE:
                 try:
-                    r = session.get(url, timeout=FEED_TIMEOUT)
-                    n = 0
-                    if r.status_code == 200:
-                        soup = BeautifulSoup(r.content, "xml")
-                        n = len(soup.find_all("item") or soup.find_all("entry"))
-                    if r.status_code != 200:
-                        failures.append((publisher, "HTTP %d" % r.status_code))
-                        if verbose:
-                            print("  FAIL  %-22s HTTP %d  %s"
-                                  % (publisher, r.status_code, url))
-                    elif n == 0:
-                        failures.append((publisher, "0 items / not XML"))
-                        if verbose:
-                            print("  FAIL  %-22s 0 items (not XML?)  %s"
-                                  % (publisher, url))
-                    else:
-                        ok += 1
-                        cat_ok += 1
-                        if verbose:
-                            print("  ok    %-22s %3d items  %s"
-                                  % (publisher, n, urlparse(url).netloc))
-                except Exception as exc:                     # noqa: BLE001
-                    failures.append((publisher, str(exc)[:80]))
-                    if verbose:
-                        print("  FAIL  %-22s %s" % (publisher, str(exc)[:60]))
-                time.sleep(FEED_DELAY)
+                    candidates = nsrc.gather_category(
+                        category, session,
+                        html_to_text=html_to_text,
+                        clean_noise=clean_social_noise,
+                    )
+                except Exception as exc:
+                    logging.error(
+                        f"Publisher feeds failed for '{category}': {exc}")
+                    candidates = []
 
-            if cat_ok == 0:
-                dead_categories.append(category)
-                if verbose:
-                    print("  >> NO HEALTHY FEED. This category will fall back "
-                          "to aggregator search and yield stubs.")
-            elif verbose and cat_ok < len(feeds):
-                print("  >> %d of %d healthy. Survivable, reduced diversity."
-                      % (cat_ok, len(feeds)))
+            # ── FALLBACK: aggregator top-up ─────────────────────────────────
+            # Counts EXTRACTABLE items, not merely recent ones, so the
+            # aggregators are consulted only when the publisher feeds actually
+            # came up short. Under the old count three MSN stubs read as three
+            # good candidates, and the top-up that fired pulled from a second
+            # aggregator that returned more stubs.
+            usable = {
+                _news_dedupe_key(c["title"])
+                for c in candidates if _is_extractable(c)
+            }
+            if len(usable) < NEWS_ITEM_TARGET + 1:
+                logging.info(
+                    f"[{category}] only {len(usable)} extractable publisher "
+                    f"item(s); topping up from aggregator search"
+                )
+                try:
+                    candidates += fetch_bing_news_rss(query, session)
+                    candidates += fetch_google_news_rss(query, session)
+                except Exception as exc:
+                    logging.error(f"News fetch error for '{category}': {exc}")
+                    # Only a hard error when BOTH paths produced nothing. The
+                    # marker text is preserved verbatim because the workflow
+                    # health check and SKILL.md section 1 both grep for it.
+                    if not candidates:
+                        lines.append(f"News fetch error: {exc}")
+                        lines.append("")
+                        if idx < len(query_list) - 1:
+                            time.sleep(NEWS_FETCH_DELAY)
+                        continue
 
-    return ok, failures, dead_categories
+            # Extractable candidates first. The loop below stops at
+            # NEWS_ITEM_TARGET, so ordering decides what gets extracted, and a
+            # citable item must never be crowded out by a stub that merely
+            # appeared earlier in the candidate list. sorted() is stable, so
+            # ordering within each group is preserved.
+            candidates.sort(key=lambda c: not _is_extractable(c))
+
+            chosen = []
+            snippet_pool = []
+            seen = set()
+            attempts = 0
+            stale = 0
+
+            for item in candidates[:NEWS_CANDIDATE_CAP]:
+                if len(chosen) >= NEWS_ITEM_TARGET:
+                    break
+
+                if item["published"] and not is_recent(item["published"]):
+                    stale += 1
+                    continue
+
+                key = _news_dedupe_key(item["title"])
+                if not key or key in seen:
+                    continue
+                seen.add(key)
+
+                host = urlparse(item["url"]).netloc.lower()
+                skip_fetch = (
+                    any(bad in host for bad in UNEXTRACTABLE_HOSTS)
+                    or attempts >= NEWS_MAX_FETCH_ATTEMPTS
+                )
+
+                body = None
+                if not skip_fetch:
+                    attempts += 1
+                    logging.info(f"Fetching Article: {item['url'][:80]}...")
+                    body = fetch_article_text(item["url"], session, favor_recall=True)
+                    time.sleep(0.5)  # gentle throttle between publisher hits
+
+                if body and len(body) >= NEWS_BODY_MIN_LENGTH:
+                    item["content"] = truncate_text(body, NEWS_BODY_MAX_CHARS)
+                    item["content_type"] = "full-text"
+                    chosen.append(item)
+                    logging.info(
+                        f"OK full-text ({len(body)} chars) [{item['origin']}] "
+                        f"{host}: {item['title'][:60]}"
+                    )
+                else:
+                    # No usable full text -> keep as a snippet-backfill candidate.
+                    snippet_pool.append(item)
+
+            # Backfill remaining slots with the best available snippet, richest
+            # first. Prefer the RSS description; fall back to the headline when
+            # the description is too thin (common for Google News items) so a
+            # slot can still be filled rather than left empty.
+            snippet_pool.sort(key=lambda it: -len(it["desc"]))
+            for item in snippet_pool:
+                if len(chosen) >= NEWS_ITEM_TARGET:
+                    break
+                snippet = (
+                    item["desc"]
+                    if len(item["desc"]) >= NEWS_SNIPPET_MIN_LENGTH
+                    else item["title"]
+                )
+                if not snippet:
+                    continue
+                item["content"] = truncate_text(snippet, NEWS_BODY_MAX_CHARS)
+                item["content_type"] = "snippet"
+                chosen.append(item)
+                logging.info(
+                    f"OK snippet ({len(snippet)} chars) [{item['origin']}]: "
+                    f"{item['title'][:60]}"
+                )
+
+            n_full = sum(1 for c in chosen if c["content_type"] == "full-text")
+            logging.info(
+                f"[{category}] chosen={len(chosen)} (target {NEWS_ITEM_TARGET}), "
+                f"CITABLE={n_full}, stubs={len(chosen) - n_full}, "
+                f"stale_skipped={stale}, fetch_attempts={attempts}"
+            )
+            if n_full == 0 and chosen:
+                logging.warning(
+                    f"[{category}] every item is a headline stub with no "
+                    f"article body. The brief cannot cite any of them."
+                )
+
+            if not chosen:
+                lines.append("No recent articles found for this query.")
+                lines.append("")
+            else:
+                for item in chosen:
+                    tag = "" if item["content_type"] == "full-text" else " (headline summary)"
+                    lines.extend([
+                        f"TITLE: {item['title']}",
+                        f"SOURCE: {item['source']}{tag}",
+                        f"PUBLISHED: {item['published'] or 'Unknown'}",
+                        f"URL: {item['url']}",
+                        f"CONTENT: {item['content']}",
+                        "",
+                    ])
+
+            # Polite delay between category fetches
+            if idx < len(query_list) - 1:
+                time.sleep(NEWS_FETCH_DELAY)
+
+    return "\n".join(lines)
 
 
-def main(argv):
-    if "--check-feeds" not in argv:
-        print(__doc__.strip().split("\n\n")[0])
-        print("\nusage: python3 news_sources.py --check-feeds")
-        return 2
+# ── PODCAST SECTION ───────────────────────────────────────────────────────────
 
-    logging.basicConfig(level=logging.WARNING)
-    print("=" * 70)
-    print("ADVISOR PULSE  |  PUBLISHER FEED PREFLIGHT")
-    print("=" * 70)
-    ok, failures, dead = check_feeds()
-    total = sum(len(v) for v in PUBLISHER_FEEDS.values())
-    print("\n" + "-" * 70)
-    print("%d of %d feed(s) healthy" % (ok, total))
+def fetch_youtube_episode(show_name, feed_url, session):
+    """Fetch the latest *full* episode from a YouTube RSS feed (skip Shorts)."""
+    response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, "xml")
+    entries = soup.find_all("entry")
+    if not entries:
+        raise ValueError("Feed contained no <entry> nodes")
 
-    if failures:
-        print("\nFailed feeds:")
-        for pub, why in failures:
-            print("  %-22s %s" % (pub, why))
-        print("\nA dead feed looks exactly like a quiet news month "
-              "downstream. Fix or comment out the URL.")
-        print("NOTE: a feed can return valid RSS in a browser and 403 from a "
-              "CI runner (datacenter IP reputation). This preflight, run in "
-              "CI, is the only verification that counts.")
+    chosen = None
+    for entry in entries:
+        if not is_youtube_short(entry):
+            chosen = entry
+            break
+    if chosen is None:
+        chosen = entries[0]
 
-    # Exit code reflects CATEGORY health, not feed count. See check_feeds.
-    if dead:
-        print("\nCATEGORIES WITH NO HEALTHY FEED: %s" % ", ".join(dead))
-        print("Each will fall back to aggregator search and produce "
-              "uncitable stubs. This is the condition worth blocking on.")
-        return 1
+    title = extract_tag_text(chosen, "title") or "Unknown episode"
+    link = extract_item_link(chosen) or "Unavailable"
+    published = extract_tag_text(
+        chosen, "published", "updated"
+    ) or "Unknown"
 
-    if failures:
-        print("\nEvery category retains at least one healthy feed. "
-              "Proceeding with reduced diversity.")
-        return 0
+    transcript = fetch_youtube_transcript(link)
+    if transcript:
+        data_type = "Transcript"
+        content = transcript
+    else:
+        desc = find_first_tag(
+            chosen, "media:description", "description", "summary"
+        )
+        raw = desc.get_text(" ", strip=True) if desc else ""
+        content = (
+            clean_social_noise(raw)
+            or "No transcript or description available."
+        )
+        data_type = "Show notes"
 
-    print("All configured feeds healthy.")
-    return 0
+    return {
+        "title": title,
+        "published": published,
+        "url": link,
+        "data_type": data_type,
+        "content": content,
+    }
+
+
+def fetch_rss_episode(show_name, feed_url, session):
+    """Fetch the latest episode from a standard RSS feed."""
+    response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
+    response.raise_for_status()
+    soup = BeautifulSoup(response.content, "xml")
+    item = soup.find("item")
+    if item is None:
+        raise ValueError("Feed contained no <item> nodes")
+
+    title = extract_tag_text(item, "title") or "Unknown episode"
+    link = extract_item_link(item) or "Unavailable"
+    published = extract_tag_text(
+        item, "published", "updated", "pubDate", "dc:date"
+    ) or "Unknown"
+
+    page_content = None
+    if link and link.startswith("http") and not link.endswith(".mp3"):
+        page_content = fetch_article_text(link, session)
+        if page_content:
+            page_content = clean_social_noise(page_content)
+
+    if page_content and len(page_content) > 200:
+        data_type = "Episode page"
+        content = page_content
+    else:
+        data_type = "Show notes"
+        content = extract_episode_notes(item)
+
+    return {
+        "title": title,
+        "published": published,
+        "url": link,
+        "data_type": data_type,
+        "content": content,
+    }
+
+
+def build_podcast_section(session):
+    lines = ["### SOCIAL & PODCAST INTELLIGENCE ###"]
+    for show_name, feeds in PODCAST_FEEDS.items():
+        episode = None
+        errors = []
+
+        if "youtube" in feeds:
+            try:
+                episode = fetch_youtube_episode(
+                    show_name, feeds["youtube"], session
+                )
+            except Exception as exc:
+                errors.append(f"YouTube: {exc}")
+
+        if episode is None and "rss" in feeds:
+            try:
+                episode = fetch_rss_episode(
+                    show_name, feeds["rss"], session
+                )
+            except Exception as exc:
+                errors.append(f"RSS: {exc}")
+
+        if episode:
+            lines.extend([
+                f"SHOW: {show_name}",
+                f"EPISODE: {episode['title']}",
+                f"PUBLISHED: {episode['published']}",
+                f"URL: {episode['url']}",
+                f"DATA_TYPE: {episode['data_type']}",
+                "DATA:",
+                truncate_text(episode["content"], EPISODE_TEXT_MAX_CHARS),
+                "-" * 50,
+                "",
+            ])
+        else:
+            lines.extend([
+                f"SHOW: {show_name}",
+                f"ERROR: {'; '.join(errors) or 'Unknown error'}",
+                "-" * 50,
+                "",
+            ])
+
+    return "\n".join(lines)
+
+
+# ── MAIN ──────────────────────────────────────────────────────────────────────
+
+def build_report():
+    today = dt.datetime.now().strftime("%Y-%m-%d")
+    sections = [
+        f"OCEANFRONT MARKET INTELLIGENCE - {today}",
+        "=" * 50,
+        "",
+        build_news_section(),
+    ]
+    with requests.Session(impersonate=IMPERSONATE) as session:
+        session.headers.update(HEADERS)
+        sections.append(build_podcast_section(session))
+    return "\n".join(section for section in sections if section).strip() + "\n"
+
+
+def fetch_content(output_file=OUTPUT_FILE):
+    logging.info("Starting Oceanfront Market Intelligence Generation...")
+    if not PUBLISHER_FEEDS_AVAILABLE:
+        logging.warning(
+            "Running WITHOUT publisher feeds. Expect mostly uncitable stubs."
+        )
+    report = build_report()
+    output_file.write_text(report, encoding="utf-8")
+    logging.info(f"Intelligence report successfully written to {output_file}")
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    fetch_content()
