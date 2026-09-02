@@ -1,17 +1,16 @@
 {
   "header_date":   "2026-09-02",
-  "generated_utc": "2026-09-02T16:56:01Z",
-  "sha256":        "63302610c2434761a01a490da181bf8724c4fdad533aec40753ec8bed6e73d86",
-  "bytes":         27916,
-  "articles":      9,
+  "generated_utc": "2026-09-02T17:16:13Z",
+  "sha256":        "58ca0255fba63a16510c0ca766ff97b966c56432592705fd9cc7c2b399ea87b5",
+  "bytes":         28725,
+  "articles":      12,
   "categories_empty":   0
 0,
   "categories_errored": 0
 0,
   "podcast_errors":     0
 0,
-  "headline_summary":   0
-0,
-  "run_id":        "33657827660",
-  "commit":        "b31c9fb4a9b3aa72c58162987f3a237184cb4125"
+  "headline_summary":   2,
+  "run_id":        "33659856489",
+  "commit":        "087b35cbda4e38ec40a3a7e92c57551fe574f443"
 }
