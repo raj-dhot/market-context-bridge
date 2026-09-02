@@ -20,6 +20,25 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
+# Origin-publisher RSS discovery. SOFT import on purpose.
+#
+# If news_sources.py has not landed yet (or was renamed), a hard import would
+# raise at module load and kill the month outright. Degrading to the old
+# aggregator-only path instead still produces a file, the workflow's feed
+# preflight step already warned, and the CITABLE gate in the health check will
+# catch the degraded yield. Loud, not fatal.
+try:
+    import news_sources as nsrc
+    PUBLISHER_FEEDS_AVAILABLE = True
+except ImportError as _exc:
+    nsrc = None
+    PUBLISHER_FEEDS_AVAILABLE = False
+    logging.error(
+        "news_sources.py could not be imported (%s). Falling back to "
+        "aggregator-only discovery, which yields uncitable MSN and Google "
+        "News stubs. Put news_sources.py next to fetch_news.py.", _exc
+    )
+
 # curl_cffi impersonation target. Kept as a hedge: on GitHub Actions
 # (datacenter IPs) some publishers reject non-browser TLS fingerprints, and
 # impersonation can recover those extractions. It does NOT help with msn.com
@@ -43,6 +62,22 @@ PODCAST_FEEDS = {
     },
 }
 
+# FALLBACK ONLY as of 2026-09-02. Origin-publisher feeds in news_sources.py are
+# the primary discovery path; these queries now only top up a category whose
+# publisher feeds came back with too few EXTRACTABLE items.
+#
+# Why the demotion: Bing News is a Microsoft product that heavily indexes MSN,
+# also Microsoft, whose article body is JavaScript-rendered and absent from the
+# HTML. Google News RSS returns Google's own opaque redirect stubs. Both hosts
+# are therefore in UNEXTRACTABLE_HOSTS and fall back to a bare headline. Asking
+# two aggregators for links got back links to themselves: 6 of 9 items arrived
+# uncitable on both 2026-09-01 and 2026-09-02, with two of three categories
+# entirely unusable.
+#
+# The keys MUST stay identical to news_sources.PUBLISHER_FEEDS keys. They are
+# matched by string. A renamed category here silently disables its publisher
+# feeds and drops that category back to aggregator search with no error.
+#
 # NOTE: Do NOT use the boolean operator "OR" in these queries. Bing News RSS
 # treats a raw "OR" literally and returns ZERO results. Use plain space-
 # separated keywords instead.
@@ -96,8 +131,8 @@ YOUTUBE_SHORTS_PATTERN = re.compile(r"youtube\.com/shorts/", re.IGNORECASE)
 # Delay between news RSS fetches (be polite)
 NEWS_FETCH_DELAY = 2
 
-# ── TEXT HELPERS ───────────────────────────────────────────────────────────────
 
+# ── TEXT HELPERS ───────────────────────────────────────────────────────────────
 
 def normalize_whitespace(text):
     return re.sub(r"\s+", " ", text or "").strip()
@@ -126,7 +161,8 @@ def clean_social_noise(text):
     cleaned = html.unescape(text or "")
 
     # Zero-width / invisible unicode chars
-    cleaned = re.sub(r"[⁠​‌‍﻿­]+", "", cleaned)
+    cleaned = re.sub(r"[⁠‌‍﻿­]+", "", cleaned)
+
     # Common emoji ranges
     cleaned = re.sub(
         r"[\U0001F300-\U0001FAD6\U0001F600-\U0001F64F"
@@ -193,7 +229,6 @@ def clean_social_noise(text):
 
 # ── DATE HELPERS ──────────────────────────────────────────────────────────────
 
-
 def parse_datetime(value):
     if not value:
         return None
@@ -227,7 +262,6 @@ def is_recent(value, days=NEWS_LOOKBACK_DAYS):
 
 # ── XML / RSS HELPERS ─────────────────────────────────────────────────────────
 
-
 def source_name_from_url(url):
     if not url:
         return "Unknown"
@@ -256,12 +290,10 @@ def extract_tag_text(parent, *names):
 
 # ── YOUTUBE HELPERS ───────────────────────────────────────────────────────────
 
-
 def extract_youtube_video_id(url_or_id):
     if not url_or_id:
         return None
     candidate = url_or_id.strip()
-
     if candidate.startswith("yt:video:"):
         candidate = candidate.rsplit(":", 1)[-1]
     if YOUTUBE_ID_PATTERN.fullmatch(candidate):
@@ -309,7 +341,6 @@ def fetch_youtube_transcript(url_or_id):
         return None
 
     chunks = []
-
     # Try the newer .fetch() API first
     try:
         api = YouTubeTranscriptApi()
@@ -380,7 +411,6 @@ def fetch_article_text(url, session=None, favor_recall=False):
 
 # ── RSS ITEM HELPERS ──────────────────────────────────────────────────────────
 
-
 def extract_item_link(item):
     """Get the best URL from an RSS <item> or Atom <entry>."""
     for link_tag in item.find_all("link", recursive=False):
@@ -431,7 +461,6 @@ def extract_episode_notes(item):
 
 # ── NEWS DISCOVERY (BING + GOOGLE NEWS RSS) ────────────────────────────────────
 
-
 def _decode_bing_url(link):
     """Bing wraps each result in an apiclick.aspx redirect carrying the real
     publisher URL in the `url=` query param. Decode it so we fetch the
@@ -450,6 +479,33 @@ def _news_dedupe_key(title):
     # a prefix - distinct stories that share a long common headline prefix
     # (e.g. daily market recaps) would otherwise collapse into one.
     return re.sub(r"[^\w\s]", "", (title or "").lower()).strip()
+
+
+def _is_extractable(item):
+    """True when the item is recent AND its body can actually be fetched.
+
+    Nothing in the old pipeline measured this, which is why two categories
+    could be entirely unusable while every check reported healthy. The old
+    top-up trigger counted items with an in-window DATE, so three MSN stubs
+    counted as three good candidates. It did still fire the top-up at that
+    count, but it topped up from a SECOND aggregator that returned more
+    stubs, so more fetching could not help: the candidate pool was 6 stubs
+    and 0 citable items.
+
+    A stub is a PRESENT item, not a missing one, so no degradation marker
+    fires for it. Counting extractability is what makes the difference
+    visible, and it is used twice below: to decide whether the aggregators
+    are needed at all, and to order candidates so a citable item is never
+    crowded out of a slot by a stub that merely sorted earlier.
+    """
+    if not item.get("published"):
+        return False
+    if parse_datetime(item["published"]) is None:
+        return False
+    if not is_recent(item["published"]):
+        return False
+    host = urlparse(item.get("url") or "").netloc.lower()
+    return not any(bad in host for bad in UNEXTRACTABLE_HOSTS)
 
 
 def fetch_bing_news_rss(query, session, max_items=15):
@@ -544,16 +600,19 @@ def fetch_google_news_rss(query, session, max_items=10):
 
 # ── NEWS SECTION ──────────────────────────────────────────────────────────────
 
-
 def build_news_section():
     """Build the news section.
 
     Core strategy:
-      1. Gather candidates from Bing News RSS (real publisher URLs). Top up
-         from Google News RSS if Bing's *recent* yield is thin (or blocked).
-      2. PREFER full-text: extract each candidate's body, skipping JS-only
+      1. PRIMARY: gather candidates from origin-publisher RSS feeds
+         (news_sources.py). Real article bodies, canonical URLs, and
+         publishers that pass the SKILL.md section 4 source hierarchy by
+         construction.
+      2. FALLBACK: top up from Bing / Google News RSS only when the publisher
+         feeds did not yield enough EXTRACTABLE recent candidates.
+      3. PREFER full-text: extract each candidate's body, skipping JS-only
          hosts (msn.com) that can never yield text.
-      3. FALL BACK to the RSS headline+snippet for any slot not filled with
+      4. FALL BACK to the RSS headline+snippet for any slot not filled with
          full text (richest snippets first). A category is therefore never
          empty just because extraction failed.
     """
@@ -567,29 +626,58 @@ def build_news_section():
         for idx, (category, query) in enumerate(query_list):
             lines.append(f"### {category.upper()} ###")
 
-            try:
-                candidates = fetch_bing_news_rss(query, session)
-            except Exception as exc:
-                logging.error(f"News fetch error for '{category}': {exc}")
-                lines.append(f"News fetch error: {exc}")
-                lines.append("")
-                if idx < len(query_list) - 1:
-                    time.sleep(NEWS_FETCH_DELAY)
-                continue
+            # ── PRIMARY: origin-publisher feeds ─────────────────────────────
+            # A dead feed is logged and skipped inside gather_category rather
+            # than raised, so one publisher cannot take out the category.
+            candidates = []
+            if PUBLISHER_FEEDS_AVAILABLE:
+                try:
+                    candidates = nsrc.gather_category(
+                        category, session,
+                        html_to_text=html_to_text,
+                        clean_noise=clean_social_noise,
+                    )
+                except Exception as exc:
+                    logging.error(
+                        f"Publisher feeds failed for '{category}': {exc}")
+                    candidates = []
 
-            # Top up from a second source if Bing's recent yield is thin, so a
-            # feed full of stale evergreen results still triggers the backfill.
-            # Count only items with a parseable, in-window date so undated
-            # items can't inflate the count and suppress the top-up.
-            recent_keys = {
+            # ── FALLBACK: aggregator top-up ─────────────────────────────────
+            # Counts EXTRACTABLE items, not merely recent ones, so the
+            # aggregators are consulted only when the publisher feeds actually
+            # came up short. Under the old count three MSN stubs read as three
+            # good candidates, and the top-up that fired pulled from a second
+            # aggregator that returned more stubs.
+            usable = {
                 _news_dedupe_key(c["title"])
-                for c in candidates
-                if c["published"]
-                and parse_datetime(c["published"]) is not None
-                and is_recent(c["published"])
+                for c in candidates if _is_extractable(c)
             }
-            if len(recent_keys) < NEWS_ITEM_TARGET + 2:
-                candidates += fetch_google_news_rss(query, session)
+            if len(usable) < NEWS_ITEM_TARGET + 1:
+                logging.info(
+                    f"[{category}] only {len(usable)} extractable publisher "
+                    f"item(s); topping up from aggregator search"
+                )
+                try:
+                    candidates += fetch_bing_news_rss(query, session)
+                    candidates += fetch_google_news_rss(query, session)
+                except Exception as exc:
+                    logging.error(f"News fetch error for '{category}': {exc}")
+                    # Only a hard error when BOTH paths produced nothing. The
+                    # marker text is preserved verbatim because the workflow
+                    # health check and SKILL.md section 1 both grep for it.
+                    if not candidates:
+                        lines.append(f"News fetch error: {exc}")
+                        lines.append("")
+                        if idx < len(query_list) - 1:
+                            time.sleep(NEWS_FETCH_DELAY)
+                        continue
+
+            # Extractable candidates first. The loop below stops at
+            # NEWS_ITEM_TARGET, so ordering decides what gets extracted, and a
+            # citable item must never be crowded out by a stub that merely
+            # appeared earlier in the candidate list. sorted() is stable, so
+            # ordering within each group is preserved.
+            candidates.sort(key=lambda c: not _is_extractable(c))
 
             chosen = []
             snippet_pool = []
@@ -658,10 +746,17 @@ def build_news_section():
                     f"{item['title'][:60]}"
                 )
 
+            n_full = sum(1 for c in chosen if c["content_type"] == "full-text")
             logging.info(
                 f"[{category}] chosen={len(chosen)} (target {NEWS_ITEM_TARGET}), "
+                f"CITABLE={n_full}, stubs={len(chosen) - n_full}, "
                 f"stale_skipped={stale}, fetch_attempts={attempts}"
             )
+            if n_full == 0 and chosen:
+                logging.warning(
+                    f"[{category}] every item is a headline stub with no "
+                    f"article body. The brief cannot cite any of them."
+                )
 
             if not chosen:
                 lines.append("No recent articles found for this query.")
@@ -687,13 +782,11 @@ def build_news_section():
 
 # ── PODCAST SECTION ───────────────────────────────────────────────────────────
 
-
 def fetch_youtube_episode(show_name, feed_url, session):
     """Fetch the latest *full* episode from a YouTube RSS feed (skip Shorts)."""
     response = session.get(feed_url, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     soup = BeautifulSoup(response.content, "xml")
-
     entries = soup.find_all("entry")
     if not entries:
         raise ValueError("Feed contained no <entry> nodes")
@@ -703,7 +796,6 @@ def fetch_youtube_episode(show_name, feed_url, session):
         if not is_youtube_short(entry):
             chosen = entry
             break
-
     if chosen is None:
         chosen = entries[0]
 
@@ -776,7 +868,6 @@ def fetch_rss_episode(show_name, feed_url, session):
 
 def build_podcast_section(session):
     lines = ["### SOCIAL & PODCAST INTELLIGENCE ###"]
-
     for show_name, feeds in PODCAST_FEEDS.items():
         episode = None
         errors = []
@@ -822,7 +913,6 @@ def build_podcast_section(session):
 
 # ── MAIN ──────────────────────────────────────────────────────────────────────
 
-
 def build_report():
     today = dt.datetime.now().strftime("%Y-%m-%d")
     sections = [
@@ -831,16 +921,18 @@ def build_report():
         "",
         build_news_section(),
     ]
-
     with requests.Session(impersonate=IMPERSONATE) as session:
         session.headers.update(HEADERS)
         sections.append(build_podcast_section(session))
-
     return "\n".join(section for section in sections if section).strip() + "\n"
 
 
 def fetch_content(output_file=OUTPUT_FILE):
     logging.info("Starting Oceanfront Market Intelligence Generation...")
+    if not PUBLISHER_FEEDS_AVAILABLE:
+        logging.warning(
+            "Running WITHOUT publisher feeds. Expect mostly uncitable stubs."
+        )
     report = build_report()
     output_file.write_text(report, encoding="utf-8")
     logging.info(f"Intelligence report successfully written to {output_file}")
