@@ -1,8 +1,8 @@
 {
   "header_date":   "2026-09-02",
-  "generated_utc": "2026-09-02T15:59:16Z",
-  "sha256":        "5173428739c56e627806bf32fe801a85b5b38cb15a484259e9738eb70257c920",
-  "bytes":         27889,
+  "generated_utc": "2026-09-02T16:56:01Z",
+  "sha256":        "63302610c2434761a01a490da181bf8724c4fdad533aec40753ec8bed6e73d86",
+  "bytes":         27916,
   "articles":      9,
   "categories_empty":   0
 0,
@@ -12,6 +12,6 @@
 0,
   "headline_summary":   0
 0,
-  "run_id":        "33651860804",
-  "commit":        "cbe704b51f7f6104b3b641a7bfcc14adc37390c1"
+  "run_id":        "33657827660",
+  "commit":        "b31c9fb4a9b3aa72c58162987f3a237184cb4125"
 }
