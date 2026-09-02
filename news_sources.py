@@ -336,6 +336,53 @@ EXCLUDE_TERMS = (
     "ranked", "ranking", "comparison", " vs ", " vs.",
     "guide to", "how to", "everything you need to know",
     "what you need to know", "explained",
+
+    # EVERGREEN INDEX AND DIGEST PAGES. Not articles: no story, no date, and
+    # the body is a jumble of unrelated releases. The BLS feed carries its own
+    # homepage as an item, which reached the 2026-09-02 output as "Major
+    # Economic Indicators Latest Numbers" pointing at bls.gov/bls/.
+    "latest numbers", "major economic indicators", "at a glance",
+    "release calendar", "data finder",
+
+    # ENTERTAINMENT, SPORT AND LIFESTYLE. General business desks run industry
+    # features that match economic terms without being market news. DW's
+    # "Gamescom 2026: What's next for the gaming industry?" reached the
+    # output by matching "global" in "global games industry".
+    "gamescom", "gaming", "video game", "esports", "console",
+    "film", "movie", "box office", "music", "album", "concert",
+    "fashion", "celebrity", "royal", "recipe", "restaurant",
+    "football", "soccer", "olympic", "world cup", "tennis", "golf",
+)
+
+# EXCLUDE BY URL PATH, which is stricter than any title rule.
+#
+# Wire services republished by a newspaper are the problem this solves.
+# Financial Post carries Business Wire, GlobeNewswire and CNW releases under
+# its own domain, so they arrive looking like Financial Post journalism: real
+# publisher, real body, fully citable. On 2026-09-02 that put a lumber mill's
+# provincial-funding announcement into the Canada section, and it matched the
+# keyword filter legitimately because the body says "TSX: GFP" and "markets".
+#
+# A corporate press release is the company's own words about itself. It is not
+# reporting, it is not a macro development, and no client is asking about it.
+# The URL is the reliable tell: the newspaper files it under a newswire path.
+# CRITICAL DISTINCTION: an INSTITUTIONAL press release is a primary source and
+# the best input this brief gets. A CORPORATE press release on a wire service
+# is a company talking about itself. Only wire-service paths are listed, and a
+# generic "press-release" pattern must never be added: the Bank of Canada
+# publishes its rate decisions at
+#   bankofcanada.ca/2026/09/fad-press-release-2026-09-02/
+# so that pattern silently deletes the most important item in the file. It was
+# in this list for about a minute on 2026-09-02 and the regression test caught
+# it. Every entry below belongs to a wire service and nothing else.
+EXCLUDE_URL_PATTERNS = (
+    "/pmn/",                    # Postmedia newswire (Financial Post)
+    "business-wire",
+    "globenewswire",
+    "newswire",                 # covers prnewswire, cnw newswire paths
+    "/cnw/",                    # Canada Newswire
+    "accesswire",
+    "businesswire",
 )
 
 # Per-category exclusions, applied ON TOP of EXCLUDE_TERMS and to the TITLE
@@ -441,6 +488,13 @@ def matches_category(item, terms, category=None):
     not be dropped for it.
     """
     title = str(item.get("title", "")).lower()
+    url = str(item.get("url", "")).lower()
+
+    # URL first: it is the strictest test and catches wire-service releases
+    # that are otherwise indistinguishable from the newspaper's own reporting.
+    for bad in EXCLUDE_URL_PATTERNS:
+        if bad in url:
+            return False, "excluded on URL path %r" % bad
 
     for bad in EXCLUDE_TERMS:
         if bad in title:
