@@ -1,80 +1,331 @@
+# ============================================================================
+# OceanFront Advisor Pulse  --  monthly news fetcher
+# DEPLOYED FILE. Replaces the previous weekly workflow of the same name.
+# ============================================================================
+#
+# Deploy to: .github/workflows/update_news.yml
+# Requires at repo root: fetch_news.py (patched), news_sources.py, requirements.txt
+#
+# CORRECTED 2026-09-02. This header previously claimed "the SCHEDULING LOGIC IS
+# UNCHANGED... the gate narrows to days 1-7... verified across 52 Mondays." That
+# was false and described the OLD gate. The gate below is a days 1-14 window
+# whose decision is made on STATE, not the calendar, and it deliberately allows
+# a catch-up run on the second Monday. The stale header caused a downstream
+# review to report the wrong window and miss the drift described next; anyone
+# changing the gate must update this header in the same commit.
+#
+# DOWNSTREAM COUPLING, READ BEFORE CHANGING THE WINDOW. The Claude half of this
+# pipeline enforces its own independent date guard. If that guard is narrower
+# than this window, a catch-up fetch here produces a valid file that the writer
+# then refuses to use, and the self-healing is silently defeated: GitHub says it
+# recovered the month, no brief is produced, and someone has to override by hand.
+# That is exactly what happened before 2026-09-02, when this gate allowed days
+# 1-14 and the writer stopped at day 7. The two windows must be changed together.
+#
+# Four changes, mostly reliability rather than timing:
+#
+#   1. The gate is now its own job. Previously every step carried
+#      `if: steps.gate.outputs.run == 'true'` six times over. That works, but it
+#      is one forgotten line away from a step running every Monday instead of
+#      monthly. A gate job plus `needs:` means the guard is declared once and
+#      cannot be omitted from a new step.
+#
+#   2. cancel-in-progress is now false. This job commits and pushes. Cancelling
+#      it mid-push to start a newer run is a bad trade for a monthly fetch.
+#
+#   3. A post-fetch health check. fetch_news.py catches its own failures and
+#      writes them into latest_news.txt as text, so a run where every feed died
+#      still exits 0 and still commits a structurally valid file. The new step
+#      counts those markers, publishes them to the job summary, and fails the
+#      run if the file is unusable. Without this, a dead month is invisible
+#      until somebody reads the brief built from it.
+#
+# Comments corrected while here: the run is 06:00 PDT in summer but 05:00 PST in
+# winter, since cron is fixed UTC; and the fetcher's real ceiling is 9 articles
+# (NEWS_ITEM_TARGET 3 x 3 categories) plus 1 episode per show, not the ~15 and 6
+# the old timeout comment claimed.
+#
+
 name: Monthly Deep-Dive News Fetcher
 
 on:
   schedule:
-    - cron: '0 13 * * 1'  # 6:00 AM PDT every Monday (UTC); gate below limits the real run to the FIRST Monday of each month
-  workflow_dispatch:       # Manual trigger from Actions tab (bypasses the first-Monday gate)
+    # 13:17 UTC = 06:17 PDT in summer, 05:17 PST in winter.
+    # Deliberately off the hour. GitHub delays or silently drops scheduled runs
+    # under load, and the top of the hour is the most contended slot. Aug 3 2026
+    # (a first Monday) never fired and the month had to be recovered by manual
+    # dispatch the next day.
+    #
+    # Fires every Monday; the gate job below decides whether to do real work.
+    # GitHub cron cannot express "first Monday" on its own because day-of-month
+    # and day-of-week are OR'd, not AND'd.
+    - cron: '17 13 * * 1'
+  workflow_dispatch:       # Manual trigger from Actions tab (bypasses the gate)
 
-# Prevent overlapping runs
 concurrency:
   group: news-fetcher
-  cancel-in-progress: true
+  # Do not cancel a run that may be mid-commit. A monthly job has no reason to
+  # race itself, and a cancelled push is worse than a slightly delayed one.
+  cancel-in-progress: false
 
 jobs:
-  fetch-and-push:
+  # ── Gate ────────────────────────────────────────────────────────────────────
+  # Declared once, consumed by `needs` below, so no future step can forget it.
+  #
+  # "Once a month, as early as possible, and self-healing if a run is dropped."
+  #
+  # The old gate was strictly day <= 7, which is exactly the first Monday and
+  # has no retry: if GitHub drops that run, the next Monday is day 8 or later
+  # and the whole month is lost. That is what happened in August 2026.
+  #
+  # The window is now days 1-14, which covers the first AND second Monday, and
+  # the decision is made on STATE rather than the calendar: fetch only if the
+  # committed latest_news.txt is not already from the current month. So the
+  # first Monday fetches, the second Monday sees this month's file and stands
+  # down, and a dropped first Monday is silently recovered a week later.
+  gate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30   # raised from 15: monthly run pulls ~15 articles + up to 6 episodes/show
-    permissions:
-      contents: write
-
+    timeout-minutes: 2
+    outputs:
+      run: ${{ steps.check.outputs.run }}
     steps:
-      # GitHub cron can't express "first Monday" (day-of-month and
-      # day-of-week are OR'd, not AND'd), so we trigger every Monday
-      # and only proceed when the date falls in days 1-7.
-      # Manual workflow_dispatch runs always proceed.
-      - name: First-Monday gate
-        id: gate
+      - name: Checkout (needed to read the committed news file)
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Monthly gate
+        id: check
         run: |
-          DAY=$((10#$(date -u +%d)))
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "$DAY" -le 7 ]; then
+          DAY=$((10#$(date -u +%d)))   # 10# forces base 10; 08 and 09 are not octal
+          MONTH=$(date -u +%Y-%m)
+
+          # Month of the currently committed report, e.g. "2026-08"
+          HEADER_MONTH=$(head -1 latest_news.txt 2>/dev/null \
+            | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' \
+            | head -1 | cut -c1-7)
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-            echo "First Monday (day $DAY) or manual run - proceeding."
-          else
+            echo "Manual dispatch - proceeding regardless of gate."
+          elif [ "$DAY" -gt 14 ]; then
             echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "Day $DAY - not the first Monday. Skipping until next month."
+            echo "Day $DAY (UTC) - past the day 1-14 window. Standing down."
+          elif [ "$HEADER_MONTH" = "$MONTH" ]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Day $DAY (UTC) - $MONTH already fetched (file header $HEADER_MONTH). Standing down."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "Day $DAY (UTC) - no fetch yet for $MONTH (file header '${HEADER_MONTH:-none}'). Proceeding."
+            if [ "$DAY" -gt 7 ]; then
+              echo "::warning::Catch-up run. The first-Monday schedule did not fire this month."
+            fi
           fi
 
+  # ── Fetch ───────────────────────────────────────────────────────────────────
+  fetch-and-push:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    # Ceiling is 9 articles (3 per category x 3 categories) plus 1 episode per
+    # show across 4 shows. 30 minutes is generous headroom for slow publishers.
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
       - name: Checkout Repo
-        if: steps.gate.outputs.run == 'true'
-        uses: actions/checkout@v6   # node24 (was v4 / node20, deprecated)
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Set up Python (with built-in pip cache)
-        if: steps.gate.outputs.run == 'true'
-        uses: actions/setup-python@v6   # node24 (was v5 / node20, deprecated)
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
-          cache: 'pip'                  # replaces the separate actions/cache step
+          cache: 'pip'
           cache-dependency-path: requirements.txt
 
       - name: Install Libraries
-        if: steps.gate.outputs.run == 'true'
         run: pip install -r requirements.txt
 
+      # ── Feed preflight ──────────────────────────────────────────────────────
+      # News discovery comes from origin-publisher RSS (see news_sources.py).
+      # A publisher that renames or retires a feed returns 404 or HTML, and
+      # downstream that is indistinguishable from a quiet news month: the
+      # category simply comes back thin and nobody knows why.
+      #
+      # continue-on-error is deliberate. A dead feed should be LOUD but must
+      # not abort the month: the remaining feeds plus the aggregator top-up
+      # still produce a usable file, and the health check below is the real
+      # gate. Read the annotation, then fix or comment out the URL.
+      - name: Validate publisher feeds
+        id: feeds
+        continue-on-error: true
+        run: python news_sources.py --check-feeds
+        env:
+          PYTHONUNBUFFERED: "1"
+
+      - name: Flag feed failures
+        if: steps.feeds.outcome != 'success'
+        run: |
+          echo "::warning::One or more publisher RSS feeds failed preflight. Categories may fall back to aggregator search, which yields uncitable stubs. See the 'Validate publisher feeds' step log."
+          echo "- :warning: **Publisher feed preflight FAILED.** See step log." >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run Scraper
-        if: steps.gate.outputs.run == 'true'
         run: python fetch_news.py
         env:
           PYTHONUNBUFFERED: "1"
 
+      # ── Health check ────────────────────────────────────────────────────────
+      # fetch_news.py never raises on a dead feed. It catches the error and
+      # writes it into the report as text, then exits 0. A file therefore
+      # proves nothing about whether the fetch worked. Count the markers.
+      - name: Health check
+        id: health
+        run: |
+          FILE=latest_news.txt
+          if [ ! -f "$FILE" ]; then
+            echo "::error::$FILE was not produced. Scraper failed before writing."
+            exit 1
+          fi
+
+          BYTES=$(wc -c < "$FILE")
+          ARTICLES=$(grep -c '^TITLE: ' "$FILE" || true)
+          EMPTY=$(grep -c 'No recent articles found for this query.' "$FILE" || true)
+          ERRORED=$(grep -c 'News fetch error:' "$FILE" || true)
+          POD_ERR=$(grep -c '^ERROR: ' "$FILE" || true)
+          SNIPPETS=$(grep -c '(headline summary)' "$FILE" || true)
+          HEADER=$(head -1 "$FILE")
+
+          {
+            echo "### Monthly news fetch"
+            echo ""
+            echo "| metric | value |"
+            echo "| --- | --- |"
+            echo "| header | \`$HEADER\` |"
+            echo "| bytes | $BYTES |"
+            echo "| articles (ceiling 9) | $ARTICLES |"
+            echo "| categories empty | $EMPTY |"
+            echo "| categories errored | $ERRORED |"
+            echo "| podcast feeds failed | $POD_ERR |"
+            echo "| headline-summary only | $SNIPPETS |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Hard failure: nothing usable came back. Committing this would push a
+          # dead file downstream and the brief would be built on it.
+          if [ "$ARTICLES" -eq 0 ] || [ "$BYTES" -lt 2000 ]; then
+            echo "::error::Fetch produced no usable articles ($ARTICLES articles, $BYTES bytes). Not committing."
+            exit 1
+          fi
+
+          # CITABLE YIELD. This is the metric that actually matters and it was
+          # measured and then ignored: SNIPPETS was printed to the summary and
+          # never tested. A "(headline summary)" item has no article body, so
+          # SKILL.md forbids citing it. A file can therefore hold the full 9
+          # articles, report zero empty and zero errored categories, and still
+          # contain almost nothing the brief may quote. That is exactly what
+          # shipped on 2026-09-01 and again on 2026-09-02: 6 of 9 unusable,
+          # marker count zero, health reported green.
+          #
+          # Origin-publisher feeds should push this near zero. A high count now
+          # means the publisher feeds are failing and the run has fallen back
+          # to aggregator search, which is the condition worth shouting about.
+          CITABLE=$((ARTICLES - SNIPPETS))
+          echo "| CITABLE (full-text) | $CITABLE of $ARTICLES |" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$CITABLE" -eq 0 ]; then
+            echo "::error::Zero citable articles: all $ARTICLES items are headline-summary stubs with no article body. The brief cannot source a single figure from this file. Not committing."
+            exit 1
+          fi
+          if [ "$CITABLE" -lt 3 ]; then
+            echo "::warning::Only $CITABLE of $ARTICLES articles carry a usable body. Publisher feeds are likely failing; check the feed preflight step."
+          fi
+          if [ "$SNIPPETS" -gt "$CITABLE" ]; then
+            echo "::warning::Stubs ($SNIPPETS) outnumber citable articles ($CITABLE). Expect the brief to spend most of its research budget on live web search."
+          fi
+
+          # Soft warning: degraded but usable. Surfaces in the Actions tab and
+          # the downstream brief will flag it too.
+          if [ "$((EMPTY + ERRORED))" -ge 2 ]; then
+            echo "::warning::$((EMPTY + ERRORED)) of 3 news categories came back empty or errored. The brief will fall back to live web search."
+          fi
+          if [ "$POD_ERR" -gt 0 ]; then
+            echo "::warning::$POD_ERR podcast feed(s) failed. Retail sentiment coverage is reduced this month."
+          fi
+
+      # ── Manifest ────────────────────────────────────────────────────────────
+      # Emits latest_news.meta.json alongside the report.
+      #
+      # WHY: raw.githubusercontent.com is CDN-cached with a short TTL, so a
+      # consumer polling shortly after the push can receive the PREVIOUS file
+      # and have no way to tell. The failure is silent: the file is valid, just
+      # a month old. A manifest carrying the sha256 and header date makes the
+      # mismatch detectable, because a consumer that pulls a stale report and a
+      # fresh manifest sees the hashes disagree and can retry instead of
+      # briefing on last month's news.
+      #
+      # Both files are committed in the SAME commit so they can never describe
+      # different versions of each other.
+      - name: Write manifest
+        run: |
+          FILE=latest_news.txt
+          cat > latest_news.meta.json <<EOF
+          {
+            "header_date":   "$(head -1 $FILE | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')",
+            "generated_utc": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')",
+            "sha256":        "$(sha256sum $FILE | cut -d' ' -f1)",
+            "bytes":         $(wc -c < $FILE),
+            "articles":      $(grep -c '^TITLE: ' $FILE || echo 0),
+            "categories_empty":   $(grep -c 'No recent articles found for this query.' $FILE || echo 0),
+            "categories_errored": $(grep -c 'News fetch error:' $FILE || echo 0),
+            "podcast_errors":     $(grep -c '^ERROR: ' $FILE || echo 0),
+            "headline_summary":   $(grep -c '(headline summary)' $FILE || echo 0),
+            "run_id":        "${{ github.run_id }}",
+            "commit":        "${{ github.sha }}"
+          }
+          EOF
+          echo "Manifest:"
+          cat latest_news.meta.json
+
       - name: Commit News to Repo
-        if: steps.gate.outputs.run == 'true'
         run: |
           git config --global user.name "Market-Intelligence-Bot"
           git config --global user.email "bot@oceanfront.wealth"
-          git add latest_news.txt
+          # Both files in one commit so the manifest can never describe a
+          # different version of the report than the one beside it.
+          git add latest_news.txt latest_news.meta.json
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "::warning::No changes to commit. Downstream will see last month's file and should reject it on the header date."
           else
-            git commit -m "Automated update: Monthly Market Intelligence [$(date +'%Y-%m-%d')]"
+            git commit -m "Automated update: Monthly Market Intelligence [$(date -u +'%Y-%m-%d')]"
             git push
           fi
 
-  # Keeps the workflow alive by preventing GitHub's 60-day inactivity disable.
-  # This still runs EVERY Monday (the gate above only affects fetch-and-push),
-  # which is exactly what you want: the workflow executes weekly, resetting
-  # GitHub's inactivity timer, while the heavy fetch only happens monthly.
+      # ── Cache warm ──────────────────────────────────────────────────────────
+      # Pull both files back through the public CDN immediately after the push.
+      # This forces raw.githubusercontent.com to evict its old copy and cache
+      # the new one, so a consumer polling minutes later gets the current file
+      # rather than the previous month's. Best-effort only: never fail the run
+      # over it, since the manifest check downstream is the real protection.
+      - name: Warm the raw CDN
+        continue-on-error: true
+        run: |
+          BASE="https://raw.githubusercontent.com/${{ github.repository }}/${{ github.event.repository.default_branch }}"
+          for i in 1 2 3; do
+            sleep 5
+            REMOTE=$(curl -fsSL -H 'Cache-Control: no-cache' "$BASE/latest_news.txt?cb=${{ github.run_id }}-$i" | sha256sum | cut -d' ' -f1)
+            LOCAL=$(sha256sum latest_news.txt | cut -d' ' -f1)
+            if [ "$REMOTE" = "$LOCAL" ]; then
+              echo "CDN is serving the new file (attempt $i)."
+              exit 0
+            fi
+            echo "Attempt $i: CDN still serving an older copy."
+          done
+          echo "::warning::Raw CDN had not caught up after 3 attempts. Consumers must verify against latest_news.meta.json before use."
+
+  # ── Keepalive ───────────────────────────────────────────────────────────────
+  # Runs every Monday regardless of the gate, so the workflow keeps executing
+  # weekly and GitHub's 60-day inactivity timer never disables the schedule.
   keepalive:
     runs-on: ubuntu-latest
     timeout-minutes: 1
