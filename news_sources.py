@@ -75,73 +75,120 @@ except ImportError:                                          # pragma: no cover
 # reputable specialist.
 
 PUBLISHER_FEEDS = {
-    "North America (TSX & S&P 500)": [
-        # --- primary institutions (top of the source hierarchy) -------------
+    # ── CANADA ──────────────────────────────────────────────────────────────
+    # Split out of the old combined "North America" category on 2026-09-02.
+    # One category could not serve both countries: every feed in it was
+    # Canadian, so US coverage arrived only as a side-mention inside Canadian
+    # reporting and the S&P 500 had no source of its own.
+    "Canada (TSX & Macro)": [
+        # primary institutions, top of the SKILL.md section 4 hierarchy
         ("Bank of Canada",
          "https://www.bankofcanada.ca/content_type/press-releases/feed/"),
         ("Bank of Canada",
          "https://www.bankofcanada.ca/utility/news/feed/"),
         ("Statistics Canada",
          "https://www150.statcan.gc.ca/n1/rss/dai-quo/0-eng.atom"),
-        # --- major outlets, named desks -------------------------------------
+        # major outlets, named desks
         ("CBC Business",
          "https://www.cbc.ca/webfeed/rss/rss-business"),
-        # VERIFIED 2026-09-02: returns RSS 2.0 XML.
         ("Financial Post",
          "https://financialpost.com/feed/"),
         # CONFIRMED DEAD 2026-09-02, do not retry:
-        #   theglobeandmail.com/business/?service=rss  -> serves the HTML
-        #     Report on Business page, not XML. The ?service=rss pattern works
-        #     on some Globe paths but not this one, and the Globe is paywalled
-        #     anyway so trafilatura would get a teaser at best.
+        #   theglobeandmail.com/business/?service=rss -> serves HTML, and the
+        #     Globe is paywalled so extraction would get a teaser at best.
     ],
 
+    # ── UNITED STATES ───────────────────────────────────────────────────────
+    # Both institutions here are primary sources and neither is paywalled.
+    # The Fed and BLS publish the actual decisions and the actual CPI and
+    # payroll prints, which is what the brief should quote rather than a
+    # secondhand market recap.
+    "United States (S&P 500 & Fed)": [
+        # VERIFIED 2026-09-02: RSS 2.0
+        ("Federal Reserve",
+         "https://www.federalreserve.gov/feeds/press_all.xml"),
+        # VERIFIED 2026-09-02: RSS 2.0. CPI, payrolls, unemployment.
+        ("Bureau of Labor Statistics",
+         "https://www.bls.gov/feed/bls_latest.rss"),
+        # VERIFIED 2026-09-02: RSS 2.0. Named in the SKILL.md source
+        # hierarchy, and needed for index-level and market-reaction coverage
+        # that the institutions do not publish.
+        ("CNBC",
+         "https://search.cnbc.com/rs/search/combinedcms/view.xml"
+         "?partnerId=wrss01&id=20910258"),
+        # VERIFIED 2026-09-02 as an alternative if CNBC 403s from CI:
+        # ("MarketWatch",
+        #  "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+        # CONFIRMED DEAD 2026-09-02: bea.gov/rss.xml -> 404.
+    ],
+
+    # ── INTERNATIONAL & EMERGING ────────────────────────────────────────────
+    # FEEDS HERE MUST BE NON-NORTH-AMERICAN. This category previously ran on
+    # CBC Business and Bank of Canada publications, both Canadian, and on
+    # 2026-09-02 returned three Canadian/US stories. All were full-text and
+    # citable, so every automated check passed while the section was not
+    # international and one item duplicated the Canada theme. No keyword
+    # filter fixes that; the feeds were the bug.
+    #
+    # Feed sets are DISJOINT across categories, which also removes the
+    # duplicate risk: gather_category dedupes by URL within a category but
+    # not across them, so a shared feed could file one article in two places.
     "International & Emerging": [
-        ("CBC Business",
-         "https://www.cbc.ca/webfeed/rss/rss-business"),
-        ("Bank of Canada",
-         "https://www.bankofcanada.ca/content_type/publications/feed/"),
-        # UNVERIFIED. Reuters withdrew most public RSS around 2020-2023, so
-        # treat any Reuters feed as unlikely until --check-feeds says otherwise.
-        # ("Reuters Business", "https://www.reuters.com/business/rss"),
+        # VERIFIED 2026-09-02: RSS 2.0. Primary institution for the euro area.
+        ("European Central Bank",
+         "https://www.ecb.europa.eu/rss/press.html"),
+        # VERIFIED 2026-09-02: RSS 2.0. Major outlet, named desk, global
+        # business coverage, not paywalled, long-stable feed.
+        ("BBC Business",
+         "https://feeds.bbci.co.uk/news/business/rss.xml"),
+        # VERIFIED 2026-09-02: RSS 1.0 / RDF, which the parser handles since
+        # RDF still uses <item>. German public broadcaster, Europe and Asia.
+        ("DW Business",
+         "https://rss.dw.com/rdf/rss-en-bus"),
+
+        # REMOVED 2026-09-02 on source-independence grounds, NOT because the
+        # feed failed. aljazeera.com/xml/rss/all.xml returns valid RSS.
+        # Al Jazeera is funded by the Qatari state, and Qatar is one of the
+        # world's largest LNG exporters. This brief's current lead macro
+        # story is Middle East energy prices driving inflation, which makes
+        # Qatar an INTERESTED PARTY in exactly the story we would be sourcing.
+        # That is a conflict of interest, not a question of reporting quality.
+        # See the source-independence rules in SKILL.md section 4.
+        #   ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
+        #
+        # CONFIRMED DEAD: Reuters withdrew public RSS around 2020-2023.
     ],
 
-    # This category is the one the aggregators served worst and it is the
-    # anchor for the AI objection script every month. BetaKit carried the best
-    # competitor development in BOTH recent editions (Questrade's agentic
-    # finance launch), and both times it arrived as an unreadable Google stub
-    # that had to be recovered by hand. Subscribing directly to the source
-    # that keeps winning is the single highest-value change in this file.
-    # This category anchors the AI objection script every month, so it needs a
-    # tech-first source AND an advisor-trade source. BetaKit alone is
-    # tech-first and will miss advice-industry and regulatory stories.
+    # ── COMPETITOR & AI PULSE ───────────────────────────────────────────────
+    # Anchors the AI objection script. Needs a tech-first source AND an
+    # advisor-trade source: BetaKit alone is tech-first and misses
+    # advice-industry and regulatory stories.
+    #
+    # NOTE: a thin or irrelevant month here is EXPECTED and acceptable. See
+    # SKILL.md section 1, "the competitor hook is optional": the AI objection
+    # runs on the standing question when nothing material happened, and a
+    # forced stale hook is worse than none.
     "Competitor & AI Pulse": [
         # VERIFIED healthy from CI, 150 items.
         ("BetaKit", "https://betakit.com/feed/"),
-        # Advisor's Edge, the Canadian advisor trade paper. Returns RSS 2.0.
-        # BROWSER-VERIFIED ONLY, CI-UNPROVEN: see the Investment Executive
-        # note below for why that distinction matters. The preflight decides.
+        # Advisor's Edge, the Canadian advisor trade paper. RSS 2.0.
+        # BROWSER-VERIFIED, CI-UNPROVEN: see the Investment Executive note.
         ("Advisor.ca", "https://www.advisor.ca/feed/"),
-        # Consumer personal-finance, Canadian. Lower tier than the trades, so
-        # useful for retail sentiment rather than headline figures. Enable if
-        # the category still runs thin. Browser-verified, CI-unproven.
+        # Consumer personal finance, Canadian. Lower tier than the trades,
+        # so useful for retail sentiment rather than headline figures.
         # ("MoneySense", "https://www.moneysense.ca/feed/"),
 
         # DISABLED 2026-09-02 after failing CI preflight with HTTP 403:
         #   investmentexecutive.com/feed/
-        # It returns valid RSS 2.0 from a normal browser and 403 from a
-        # GitHub Actions runner. That is IP-reputation blocking, not TLS
-        # fingerprinting, so curl_cffi impersonation cannot recover it: the
-        # fetcher's own header comment already warned that datacenter IPs get
-        # rejected by some publishers. THE LESSON, worth keeping: verifying a
+        # Valid RSS 2.0 from a browser, 403 from a GitHub Actions runner.
+        # That is IP-reputation blocking, not TLS fingerprinting, so
+        # curl_cffi impersonation cannot recover it. THE LESSON: verifying a
         # feed from a browser does NOT prove the runner can reach it. Only
-        # --check-feeds run in CI proves that. Do not re-enable without a
-        # green CI preflight.
+        # --check-feeds run in CI proves that.
         #
         # CONFIRMED DEAD, do not retry:
-        #   investmentexecutive.com/rss-feeds/  -> 404 (the listing page
-        #     search engines still index; /feed/ exists but 403s from CI)
-        #   wealthprofessional.ca/feed          -> 404
+        #   investmentexecutive.com/rss-feeds/ -> 404
+        #   wealthprofessional.ca/feed         -> 404
     ],
 }
 
@@ -151,15 +198,26 @@ PUBLISHER_FEEDS = {
 # snippet contains any term. Keep terms broad: a false positive is a wasted
 # extraction attempt, while a false negative silently drops the month's story.
 CATEGORY_KEYWORDS = {
-    "North America (TSX & S&P 500)": [
-        "tsx", "s&p", "stock", "equit", "market", "index", "wall street",
-        "interest rate", "policy rate", "inflation", "cpi", "gdp",
-        "recession", "bond", "yield", "earnings", "dollar", "loonie",
-        "tariff", "trade", "federal reserve", "monetary policy",
+    "Canada (TSX & Macro)": [
+        "tsx", "stock", "equit", "market", "index", "interest rate",
+        "policy rate", "inflation", "cpi", "gdp", "recession", "bond",
+        "yield", "earnings", "dollar", "loonie", "tariff", "trade",
+        "monetary policy", "unemployment", "housing", "mortgage",
         # NOT "bank of canada": on a Bank of Canada feed the institution name
         # matches every item, including the museum's opening hours, so it
-        # discriminates nothing. NOT bare "fed" either: it substring-matches
+        # discriminates nothing. NOT bare "fed": it substring-matches
         # "feed", "federated" and "federal" and would pass anything.
+    ],
+
+    "United States (S&P 500 & Fed)": [
+        "s&p", "nasdaq", "dow", "stock", "equit", "market", "index",
+        "wall street", "interest rate", "fomc", "federal open market",
+        "inflation", "cpi", "consumer price", "gdp", "recession",
+        "bond", "yield", "treasury", "earnings", "payroll", "unemployment",
+        "jobs report", "employment situation", "tariff", "monetary policy",
+        # NOT "federal reserve" or bare "fed": same problem as "bank of
+        # canada" above. On the Fed's own press feed the institution name
+        # matches every item, and "fed" is a substring of "feed".
     ],
     "International & Emerging": [
         "emerging", "international", "global", "china", "india", "japan",
@@ -168,13 +226,32 @@ CATEGORY_KEYWORDS = {
         "msci", "export", "supply chain",
     ],
     "Competitor & AI Pulse": [
-        "wealthsimple", "questrade", "robo", "advisor", "adviser",
-        "wealth management", "brokerage", "fintech", "fin tech",
-        "artificial intelligence", "agentic", "automat", "robinhood",
-        "invest", "portfolio", "ci direct", "investease", "smartfolio",
-        "planner", "fee", "custodian",
-        # Bare "ai" is deliberately NOT a term: it substring-matches "said",
-        # "rail", "detail", "campaign" and would pass almost every headline.
+        # Named competitors and platforms
+        "wealthsimple", "questrade", "questwealth", "robinhood",
+        "ci direct", "investease", "smartfolio", "nest wealth", "justwealth",
+        # The advice business itself
+        "robo-advis", "robo advis", "advisor", "adviser",
+        "wealth management", "wealth manager", "brokerage",
+        "discount broker", "portfolio management", "financial plan",
+        "asset management", "mutual fund", "custodian",
+        "assets under management",
+        # The AI angle
+        "artificial intelligence", "agentic", "ai-powered", "ai advisor",
+        "fintech", "fin tech",
+
+        # DELIBERATE OMISSIONS, each one a bug that reached the output:
+        # "invest"  -> substring of "investors" and "investment", which appear
+        #              in nearly every BetaKit funding story. On 2026-09-02 it
+        #              alone admitted all three irrelevant Competitor items:
+        #              Alberta emissions grants, an agri-lending raise, and a
+        #              superconductor pre-seed. Same failure mode as putting
+        #              "bank of canada" on a Bank of Canada feed: a term that
+        #              matches everything the publication prints discriminates
+        #              nothing.
+        # "fee"     -> substring of "coffee" and "feed".
+        # "ai"      -> substring of "said", "rail", "detail", "campaign".
+        # "aum"     -> substring of "trauma".
+        # "planner" -> too broad on a general tech feed ("event planner").
     ],
 }
 
@@ -189,6 +266,36 @@ EXCLUDE_TERMS = (
     "bank note", "banknote", "unclaimed", "labour negotiation",
     "award", "obituary", "appointment to the board",
 )
+
+# Per-category exclusions, applied ON TOP of EXCLUDE_TERMS and to the TITLE
+# only. Needed because each publication has its own dominant off-topic beat,
+# and an include list broad enough to catch the month's story is always broad
+# enough to catch that beat too.
+CATEGORY_EXCLUDE = {
+    # BetaKit covers ALL Canadian tech. Its cleantech, deep-tech and
+    # agri-tech beats are large, well funded, and irrelevant to a wealth
+    # brief. Every one of these was in the 2026-09-02 output or one click
+    # from it.
+    "Competitor & AI Pulse": (
+        "emission", "superconductor", "quantum", "hydrogen",
+        "carbon capture", "lithium", "drone", "agricultur", "agri-",
+        "mining", "biotech", "vaccine", "battery", "solar", "nuclear",
+        "defence", "defense", "space", "satellite", "cannabis",
+    ),
+    # Belt and braces on top of using only non-North-American feeds: if a
+    # Canadian or US-domestic story surfaces on BBC or DW it belongs in one of
+    # the two country categories, not here. Title-only, so "US tariffs hit
+    # European exporters" still qualifies on its European angle.
+    "International & Emerging": (
+        "canada", "canadian", "ottawa", "alberta", "ontario", "quebec",
+        "toronto", "tsx", "loonie",
+    ),
+    # BBC and DW general-business feeds carry consumer and lifestyle items
+    # that match economic terms without being market news.
+    "United States (S&P 500 & Fed)": (
+        "obituary", "recall notice",
+    ),
+}
 
 FEED_TIMEOUT = 20          # per-feed fetch
 FEED_DELAY = 1.0           # politeness between feeds
@@ -230,21 +337,39 @@ def _link_of(item):
     return guid.strip() if guid.startswith("http") else None
 
 
-def matches_category(item, terms):
-    """True when the item looks relevant to the category.
+def matches_category(item, terms, category=None):
+    """Decide whether an item belongs in the category.
 
-    Include terms match title OR snippet, so a story whose headline is coy
-    still qualifies on its summary. Exclude terms match the TITLE ONLY: a
-    real market story that happens to mention the word "award" in its body
-    must not be dropped.
+    Returns (keep: bool, reason: str). The reason names the term that decided
+    it, which is the only practical way to debug this filter: on 2026-09-02
+    three irrelevant articles reached the output and identifying the single
+    responsible term ("invest") required reconstructing the match by hand
+    afterwards. Logging it at gather time makes the next such bug obvious in
+    the CI log instead of in the finished PDF.
+
+    Include terms match title OR snippet, so a story with a coy headline still
+    qualifies on its summary. Exclude terms match the TITLE ONLY: a real
+    market story that mentions "award" or "Canada" in passing in its body must
+    not be dropped for it.
     """
     title = str(item.get("title", "")).lower()
-    if any(bad in title for bad in EXCLUDE_TERMS):
-        return False
+
+    for bad in EXCLUDE_TERMS:
+        if bad in title:
+            return False, "excluded on %r" % bad
+    for bad in CATEGORY_EXCLUDE.get(category or "", ()):
+        if bad in title:
+            return False, "excluded on %r (category rule)" % bad
+
     if not terms:
-        return True
+        return True, "no filter"
+
     hay = "%s %s" % (title, str(item.get("desc", "")).lower())
-    return any(t in hay for t in terms)
+    for t in terms:
+        if t in hay:
+            where = "title" if t in title else "snippet"
+            return True, "matched %r in %s" % (t, where)
+    return False, "no keyword match"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -319,12 +444,18 @@ def gather_category(category, session, *, html_to_text, clean_noise,
         kept = 0
         for it in items:
             if it["url"] in seen_urls:
-                continue          # same story in two feeds, e.g. CBC in both
-            if not matches_category(it, terms):
+                continue          # same story appearing in two feeds
+            ok, reason = matches_category(it, terms, category)
+            if not ok:
+                logging.debug("    drop: %-58s (%s)",
+                              it["title"][:58], reason)
                 continue
             seen_urls.add(it["url"])
             candidates.append(it)
             kept += 1
+            # INFO, not DEBUG: this line is what makes a bad keyword visible
+            # in the CI log rather than in the published brief.
+            logging.info("    keep: %-58s (%s)", it["title"][:58], reason)
         logging.info("  %s: %d kept after keyword filter", publisher, kept)
 
         if i < len(feeds) - 1:
