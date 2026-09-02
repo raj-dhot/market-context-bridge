@@ -1,8 +1,8 @@
 {
   "header_date":   "2026-09-02",
-  "generated_utc": "2026-09-02T17:16:13Z",
-  "sha256":        "58ca0255fba63a16510c0ca766ff97b966c56432592705fd9cc7c2b399ea87b5",
-  "bytes":         28725,
+  "generated_utc": "2026-09-02T17:31:50Z",
+  "sha256":        "77baab8628904d2fc0507866082044dda94360a98f851d61fd745d6c83f97c41",
+  "bytes":         28840,
   "articles":      12,
   "categories_empty":   0
 0,
@@ -11,6 +11,6 @@
   "podcast_errors":     0
 0,
   "headline_summary":   2,
-  "run_id":        "33659856489",
-  "commit":        "087b35cbda4e38ec40a3a7e92c57551fe574f443"
+  "run_id":        "33661520310",
+  "commit":        "dad55364848b27adbb0230d93d047fd5e1143948"
 }
