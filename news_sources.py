@@ -112,18 +112,35 @@ PUBLISHER_FEEDS = {
     # finance launch), and both times it arrived as an unreadable Google stub
     # that had to be recovered by hand. Subscribing directly to the source
     # that keeps winning is the single highest-value change in this file.
+    # This category anchors the AI objection script every month, so it needs a
+    # tech-first source AND an advisor-trade source. BetaKit alone is
+    # tech-first and will miss advice-industry and regulatory stories.
     "Competitor & AI Pulse": [
+        # VERIFIED healthy from CI, 150 items.
         ("BetaKit", "https://betakit.com/feed/"),
-        # VERIFIED 2026-09-02: returns RSS 2.0 XML. Investment Executive is
-        # the Canadian advisor trade paper, so it covers the competitive and
-        # regulatory side that BetaKit (tech-first) does not. Having two
-        # complementary sources here matters: this category anchors the AI
-        # objection script every month and ran on ONE feed before.
-        ("Investment Executive",
-         "https://www.investmentexecutive.com/feed/"),
-        # CONFIRMED DEAD 2026-09-02, do not retry:
-        #   investmentexecutive.com/rss-feeds/  -> 404 (the listing page the
-        #     search engine still indexes; the /feed/ endpoint above works)
+        # Advisor's Edge, the Canadian advisor trade paper. Returns RSS 2.0.
+        # BROWSER-VERIFIED ONLY, CI-UNPROVEN: see the Investment Executive
+        # note below for why that distinction matters. The preflight decides.
+        ("Advisor.ca", "https://www.advisor.ca/feed/"),
+        # Consumer personal-finance, Canadian. Lower tier than the trades, so
+        # useful for retail sentiment rather than headline figures. Enable if
+        # the category still runs thin. Browser-verified, CI-unproven.
+        # ("MoneySense", "https://www.moneysense.ca/feed/"),
+
+        # DISABLED 2026-09-02 after failing CI preflight with HTTP 403:
+        #   investmentexecutive.com/feed/
+        # It returns valid RSS 2.0 from a normal browser and 403 from a
+        # GitHub Actions runner. That is IP-reputation blocking, not TLS
+        # fingerprinting, so curl_cffi impersonation cannot recover it: the
+        # fetcher's own header comment already warned that datacenter IPs get
+        # rejected by some publishers. THE LESSON, worth keeping: verifying a
+        # feed from a browser does NOT prove the runner can reach it. Only
+        # --check-feeds run in CI proves that. Do not re-enable without a
+        # green CI preflight.
+        #
+        # CONFIRMED DEAD, do not retry:
+        #   investmentexecutive.com/rss-feeds/  -> 404 (the listing page
+        #     search engines still index; /feed/ exists but 403s from CI)
         #   wealthprofessional.ca/feed          -> 404
     ],
 }
@@ -323,22 +340,36 @@ def gather_category(category, session, *, html_to_text, clean_noise,
 # ══════════════════════════════════════════════════════════════════════════════
 
 def check_feeds(verbose=True):
-    """Validate every configured feed. Returns (ok_count, failures).
+    """Validate every configured feed.
+
+    Returns (ok_count, failures, dead_categories).
 
     Run this in CI before the scraper. A feed that 404s or stops being XML is
     otherwise indistinguishable from a quiet news month: the category just
     comes back thin and nobody knows why.
+
+    SEVERITY IS PER CATEGORY, NOT PER FEED. One publisher going dark while its
+    category still has healthy siblings is a warning; the run proceeds and
+    loses some diversity. A category with NO healthy feed is different in kind,
+    because it falls back to aggregator search and yields uncitable stubs,
+    which is the exact failure this module exists to prevent.
+
+    The distinction was added after the first CI preflight failed the whole
+    step over one 403 out of nine feeds. A check that cries wolf over a
+    survivable fault trains people to ignore it, and this one needs to be
+    believed on the month it reports something real.
     """
     if requests is None:
         print("curl_cffi is not installed; run inside the fetcher's env.")
-        return 0, [("*", "curl_cffi missing")]
+        return 0, [("*", "curl_cffi missing")], list(PUBLISHER_FEEDS)
 
-    failures, ok = [], 0
+    failures, ok, dead_categories = [], 0, []
     with requests.Session(impersonate="chrome124") as session:
         session.headers.update({"Accept-Language": "en-CA,en;q=0.9"})
         for category, feeds in PUBLISHER_FEEDS.items():
             if verbose:
                 print("\n%s" % category)
+            cat_ok = 0
             for publisher, url in feeds:
                 try:
                     r = session.get(url, timeout=FEED_TIMEOUT)
@@ -358,6 +389,7 @@ def check_feeds(verbose=True):
                                   % (publisher, url))
                     else:
                         ok += 1
+                        cat_ok += 1
                         if verbose:
                             print("  ok    %-22s %3d items  %s"
                                   % (publisher, n, urlparse(url).netloc))
@@ -366,7 +398,17 @@ def check_feeds(verbose=True):
                     if verbose:
                         print("  FAIL  %-22s %s" % (publisher, str(exc)[:60]))
                 time.sleep(FEED_DELAY)
-    return ok, failures
+
+            if cat_ok == 0:
+                dead_categories.append(category)
+                if verbose:
+                    print("  >> NO HEALTHY FEED. This category will fall back "
+                          "to aggregator search and yield stubs.")
+            elif verbose and cat_ok < len(feeds):
+                print("  >> %d of %d healthy. Survivable, reduced diversity."
+                      % (cat_ok, len(feeds)))
+
+    return ok, failures, dead_categories
 
 
 def main(argv):
@@ -379,17 +421,33 @@ def main(argv):
     print("=" * 70)
     print("ADVISOR PULSE  |  PUBLISHER FEED PREFLIGHT")
     print("=" * 70)
-    ok, failures = check_feeds()
+    ok, failures, dead = check_feeds()
     total = sum(len(v) for v in PUBLISHER_FEEDS.values())
     print("\n" + "-" * 70)
     print("%d of %d feed(s) healthy" % (ok, total))
+
     if failures:
-        print("\nFailures:")
+        print("\nFailed feeds:")
         for pub, why in failures:
             print("  %-22s %s" % (pub, why))
-        print("\nA dead feed looks exactly like a quiet news month downstream.")
-        print("Fix or comment out the URL before relying on the category.")
+        print("\nA dead feed looks exactly like a quiet news month "
+              "downstream. Fix or comment out the URL.")
+        print("NOTE: a feed can return valid RSS in a browser and 403 from a "
+              "CI runner (datacenter IP reputation). This preflight, run in "
+              "CI, is the only verification that counts.")
+
+    # Exit code reflects CATEGORY health, not feed count. See check_feeds.
+    if dead:
+        print("\nCATEGORIES WITH NO HEALTHY FEED: %s" % ", ".join(dead))
+        print("Each will fall back to aggregator search and produce "
+              "uncitable stubs. This is the condition worth blocking on.")
         return 1
+
+    if failures:
+        print("\nEvery category retains at least one healthy feed. "
+              "Proceeding with reduced diversity.")
+        return 0
+
     print("All configured feeds healthy.")
     return 0
 
