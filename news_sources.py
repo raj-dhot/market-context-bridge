@@ -69,97 +69,124 @@ except ImportError:                                          # pragma: no cover
 # plausible and desirable but were NOT confirmed, and a wrong URL is a silently
 # dead category. Run --check-feeds, then uncomment whatever passes.
 #
-# Ordering matters. Items are gathered in list order and the primary
-# institution comes first, which matches the source hierarchy in SKILL.md
-# section 4: primary institution, then major outlet with a named desk, then
-# reputable specialist.
+# Ordering matters, and it is NOT the SKILL.md section 4 hierarchy. That
+# hierarchy ranks sources for VERIFYING a figure. This list controls what gets
+# DISCOVERED, and the brief exists to answer what clients are asking about, so
+# consumer media leads and institutions are interleaved behind it. The long
+# note inside the dict explains why front-loading institutions was wrong.
 
 PUBLISHER_FEEDS = {
-    # ── CANADA ──────────────────────────────────────────────────────────────
-    # Split out of the old combined "North America" category on 2026-09-02.
-    # One category could not serve both countries: every feed in it was
-    # Canadian, so US coverage arrived only as a side-mention inside Canadian
-    # reporting and the S&P 500 had no source of its own.
+    # ORDERING IS EDITORIAL, NOT ALPHABETICAL, AND IT MATTERS.
+    #
+    # Two kinds of source, doing two different jobs:
+    #
+    #   CONSUMER MEDIA is what clients actually read. It is where their
+    #   sentiment comes from and it is the reason this brief exists: an
+    #   advisor needs to know what the client saw on the news last night.
+    #   CBC, CNBC, BBC, Financial Post, MoneySense, DW, CNN.
+    #
+    #   INSTITUTIONS are the record. They give the exact figure and the
+    #   official wording when the brief needs to be precise, and they are top
+    #   of the SKILL.md section 4 hierarchy FOR VERIFYING A NUMBER.
+    #   Bank of Canada, Statistics Canada, Federal Reserve, BLS, ECB.
+    #
+    # The first version of this registry front-loaded institutions in every
+    # category, which was a category error: the source hierarchy ranks
+    # sources for VERIFYING figures, not for DISCOVERING what clients are
+    # worried about. Combined with the old first-feed-wins bug it produced an
+    # International section of nothing but ECB press releases, which no
+    # retail client has ever read.
+    #
+    # So the order below ALTERNATES: consumer first, then an institution, then
+    # consumer. With round-robin interleaving and three slots per category
+    # that yields a client-facing headline plus the official record, which is
+    # the pairing an advisor actually needs.
     "Canada (TSX & Macro)": [
-        # primary institutions, top of the SKILL.md section 4 hierarchy
-        ("Bank of Canada",
-         "https://www.bankofcanada.ca/content_type/press-releases/feed/"),
-        ("Bank of Canada",
-         "https://www.bankofcanada.ca/utility/news/feed/"),
-        ("Statistics Canada",
-         "https://www150.statcan.gc.ca/n1/rss/dai-quo/0-eng.atom"),
-        # major outlets, named desks
         ("CBC Business",
          "https://www.cbc.ca/webfeed/rss/rss-business"),
+        ("Bank of Canada",
+         "https://www.bankofcanada.ca/content_type/press-releases/feed/"),
         ("Financial Post",
          "https://financialpost.com/feed/"),
+        ("Statistics Canada",
+         "https://www150.statcan.gc.ca/n1/rss/dai-quo/0-eng.atom"),
+        # VERIFIED 2026-09-02: RSS 2.0. Retail personal finance, Canadian.
+        # Closest thing in the registry to what a client reads about their
+        # own money rather than about the economy.
+        ("MoneySense",
+         "https://www.moneysense.ca/feed/"),
+        ("Bank of Canada",
+         "https://www.bankofcanada.ca/utility/news/feed/"),
         # CONFIRMED DEAD 2026-09-02, do not retry:
         #   theglobeandmail.com/business/?service=rss -> serves HTML, and the
         #     Globe is paywalled so extraction would get a teaser at best.
     ],
 
-    # ── UNITED STATES ───────────────────────────────────────────────────────
-    # Both institutions here are primary sources and neither is paywalled.
-    # The Fed and BLS publish the actual decisions and the actual CPI and
-    # payroll prints, which is what the brief should quote rather than a
-    # secondhand market recap.
     "United States (S&P 500 & Fed)": [
-        # VERIFIED 2026-09-02: RSS 2.0
-        ("Federal Reserve",
-         "https://www.federalreserve.gov/feeds/press_all.xml"),
-        # VERIFIED 2026-09-02: RSS 2.0. CPI, payrolls, unemployment.
-        ("Bureau of Labor Statistics",
-         "https://www.bls.gov/feed/bls_latest.rss"),
-        # VERIFIED 2026-09-02: RSS 2.0. Named in the SKILL.md source
-        # hierarchy, and needed for index-level and market-reaction coverage
-        # that the institutions do not publish.
+        # VERIFIED 2026-09-02: RSS 2.0. Named in the SKILL.md hierarchy and
+        # the most client-facing US markets coverage available free.
         ("CNBC",
          "https://search.cnbc.com/rs/search/combinedcms/view.xml"
          "?partnerId=wrss01&id=20910258"),
-        # VERIFIED 2026-09-02 as an alternative if CNBC 403s from CI:
-        # ("MarketWatch",
-        #  "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+        # VERIFIED 2026-09-02: RSS 2.0. The actual FOMC decisions.
+        ("Federal Reserve",
+         "https://www.federalreserve.gov/feeds/press_all.xml"),
+        # VERIFIED 2026-09-02: RSS 2.0 (Dow Jones). Enabled so slot 3 is
+        # consumer rather than a second institution: with CNBC and the Fed
+        # taking slots 1 and 2, leaving BLS third made this category two
+        # thirds institutional, against the ordering principle above.
+        # MarketWatch is soft-paywalled, so if extraction returns teasers
+        # rather than bodies, swap it back behind BLS.
+        ("MarketWatch",
+         "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+        # VERIFIED 2026-09-02: RSS 2.0. CPI, payrolls, unemployment at source.
+        ("Bureau of Labor Statistics",
+         "https://www.bls.gov/feed/bls_latest.rss"),
         # CONFIRMED DEAD 2026-09-02: bea.gov/rss.xml -> 404.
     ],
 
-    # ── INTERNATIONAL & EMERGING ────────────────────────────────────────────
-    # FEEDS HERE MUST BE NON-NORTH-AMERICAN. This category previously ran on
-    # CBC Business and Bank of Canada publications, both Canadian, and on
-    # 2026-09-02 returned three Canadian/US stories. All were full-text and
-    # citable, so every automated check passed while the section was not
-    # international and one item duplicated the Canada theme. No keyword
-    # filter fixes that; the feeds were the bug.
+    # FEEDS HERE MUST BE NON-NORTH-AMERICAN. Before 2026-09-02 this category
+    # ran on CBC and Bank of Canada feeds, both Canadian, and returned three
+    # Canadian/US stories that were all citable and all miscategorised.
     #
     # Feed sets are DISJOINT across categories, which also removes the
-    # duplicate risk: gather_category dedupes by URL within a category but
-    # not across them, so a shared feed could file one article in two places.
+    # duplicate risk: gather_category dedupes by URL within a category but not
+    # across them, so a shared feed could file one article in two places.
     "International & Emerging": [
-        # VERIFIED 2026-09-02: RSS 2.0. Primary institution for the euro area.
-        ("European Central Bank",
-         "https://www.ecb.europa.eu/rss/press.html"),
         # VERIFIED 2026-09-02: RSS 2.0. Major outlet, named desk, global
         # business coverage, not paywalled, long-stable feed.
         ("BBC Business",
          "https://feeds.bbci.co.uk/news/business/rss.xml"),
-        # VERIFIED 2026-09-02: RSS 1.0 / RDF, which the parser handles since
-        # RDF still uses <item>. German public broadcaster, Europe and Asia.
+        # VERIFIED 2026-09-02: RSS 2.0. Primary institution for the euro area.
+        # Deliberately SECOND, not first: see the ordering note above.
+        ("European Central Bank",
+         "https://www.ecb.europa.eu/rss/press.html"),
+        # VERIFIED 2026-09-02: RSS 1.0 / RDF, handled since RDF uses <item>.
+        # German public broadcaster, Europe and Asia.
         ("DW Business",
          "https://rss.dw.com/rdf/rss-en-bus"),
+        # VERIFIED 2026-09-02: RSS 2.0 (http, not https).
+        ("CNN Money",
+         "http://rss.cnn.com/rss/money_news_international.rss"),
 
         # REMOVED 2026-09-02 on source-independence grounds, NOT because the
         # feed failed. aljazeera.com/xml/rss/all.xml returns valid RSS.
         # Al Jazeera is funded by the Qatari state, and Qatar is one of the
-        # world's largest LNG exporters. This brief's current lead macro
-        # story is Middle East energy prices driving inflation, which makes
-        # Qatar an INTERESTED PARTY in exactly the story we would be sourcing.
-        # That is a conflict of interest, not a question of reporting quality.
+        # world's largest LNG exporters. This brief's lead macro story is
+        # Middle East energy prices driving inflation, which makes Qatar an
+        # INTERESTED PARTY in exactly the story we would be sourcing. That is
+        # a conflict of interest, not a question of reporting quality.
         # See the source-independence rules in SKILL.md section 4.
         #   ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml"),
+        #
+        # NOT Yahoo Finance: it is an aggregator that republishes other
+        # outlets under its own URLs, which is how MSN and Google News
+        # produced six uncitable stubs a month. Retail-facing, but it would
+        # reintroduce the exact problem this module was written to fix.
         #
         # CONFIRMED DEAD: Reuters withdrew public RSS around 2020-2023.
     ],
 
-    # ── COMPETITOR & AI PULSE ───────────────────────────────────────────────
     # Anchors the AI objection script. Needs a tech-first source AND an
     # advisor-trade source: BetaKit alone is tech-first and misses
     # advice-industry and regulatory stories.
@@ -174,9 +201,6 @@ PUBLISHER_FEEDS = {
         # Advisor's Edge, the Canadian advisor trade paper. RSS 2.0.
         # BROWSER-VERIFIED, CI-UNPROVEN: see the Investment Executive note.
         ("Advisor.ca", "https://www.advisor.ca/feed/"),
-        # Consumer personal finance, Canadian. Lower tier than the trades,
-        # so useful for retail sentiment rather than headline figures.
-        # ("MoneySense", "https://www.moneysense.ca/feed/"),
 
         # DISABLED 2026-09-02 after failing CI preflight with HTTP 403:
         #   investmentexecutive.com/feed/
@@ -191,6 +215,7 @@ PUBLISHER_FEEDS = {
         #   wealthprofessional.ca/feed         -> 404
     ],
 }
+
 
 
 # Publisher feeds carry everything the desk published, so relevance is filtered
@@ -219,11 +244,33 @@ CATEGORY_KEYWORDS = {
         # canada" above. On the Fed's own press feed the institution name
         # matches every item, and "fed" is a substring of "feed".
     ],
+    # GEOGRAPHY IS ALREADY ESTABLISHED BY THE FEEDS, which are all
+    # non-North-American, so this list carries ECONOMIC RELEVANCE terms the
+    # same way the Canada and US lists do. The Canadian terms in
+    # CATEGORY_EXCLUDE are what keep North American stories out.
+    #
+    # The first version was geography-only and silently dropped most real
+    # consumer coverage: "UK inflation falls to 2.1%", "Germany's industrial
+    # output rebounds" and "Stocks slide worldwide on rate fears" all failed
+    # to match, because a BBC headline about Britain does not contain the word
+    # "international" or "global". Those are exactly the headlines a client
+    # reads, which made the filter work against the point of the brief.
     "International & Emerging": [
-        "emerging", "international", "global", "china", "india", "japan",
-        "europe", "euro", "asia", "latin america", "brazil", "mexico",
-        "oil", "commodit", "currency", "geopolit", "imf", "world bank",
-        "msci", "export", "supply chain",
+        # economic relevance
+        "inflation", "cpi", "interest rate", "central bank", "rate cut",
+        "rate hike", "stock", "equit", "market", "index", "bond", "yield",
+        "gdp", "growth", "recession", "unemployment", "trade", "tariff",
+        "export", "import", "currency", "oil", "commodit", "energy price",
+        "supply chain", "earnings", "debt",
+        # explicit geographies, for breadth rather than gating
+        "emerging", "international", "global", "worldwide",
+        "china", "india", "japan", "korea", "taiwan", "asia",
+        "europe", "euro area", "eurozone", "germany", "france", "italy",
+        "spain", "britain", "british", "united kingdom",
+        "latin america", "brazil", "mexico", "africa", "middle east",
+        "israel", "iran", "russia", "ukraine", "opec", "imf", "world bank",
+        # NOT "uk": substring of "Ukraine" and "sukuk". Use "united kingdom",
+        # "britain" and "british" instead.
     ],
     "Competitor & AI Pulse": [
         # Named competitors and platforms
@@ -435,13 +482,13 @@ def gather_category(category, session, *, html_to_text, clean_noise,
     feeds = PUBLISHER_FEEDS.get(category, [])
     terms = CATEGORY_KEYWORDS.get(category, []) if keyword_filter else []
 
-    candidates, seen_urls = [], set()
+    per_feed, seen_urls = [], set()
     for i, (publisher, feed_url) in enumerate(feeds):
         items = fetch_publisher_rss(
             publisher, feed_url, session,
             html_to_text=html_to_text, clean_noise=clean_noise)
 
-        kept = 0
+        kept = []
         for it in items:
             if it["url"] in seen_urls:
                 continue          # same story appearing in two feeds
@@ -451,18 +498,44 @@ def gather_category(category, session, *, html_to_text, clean_noise,
                               it["title"][:58], reason)
                 continue
             seen_urls.add(it["url"])
-            candidates.append(it)
-            kept += 1
+            kept.append(it)
             # INFO, not DEBUG: this line is what makes a bad keyword visible
             # in the CI log rather than in the published brief.
             logging.info("    keep: %-58s (%s)", it["title"][:58], reason)
-        logging.info("  %s: %d kept after keyword filter", publisher, kept)
+        logging.info("  %s: %d kept after keyword filter",
+                     publisher, len(kept))
+        per_feed.append((publisher, kept))
 
         if i < len(feeds) - 1:
             time.sleep(FEED_DELAY)
 
-    logging.info("[%s] %d publisher candidate(s) total", category,
-                 len(candidates))
+    # ── ROUND-ROBIN, ONE ITEM PER FEED PER PASS ─────────────────────────────
+    # This function used to CONCATENATE the per-feed lists, which handed the
+    # whole category to whichever feed happened to be listed first. Downstream
+    # only takes NEWS_ITEM_TARGET (3) items and stops, so feed #1 monopolised
+    # all three slots and feeds #2 and #3 were never reached.
+    #
+    # That is exactly what shipped on the first 4-category run: the European
+    # Central Bank was listed first in International and the section came back
+    # entirely ECB press releases, with BBC and Deutsche Welle unread. Same
+    # latent fault in every category: Canada skewed to the Bank of Canada, the
+    # US to the Fed.
+    #
+    # Interleaving means each feed contributes its newest matching item before
+    # any feed contributes a second, so three slots across three feeds give one
+    # each. Feed ORDER still decides which feeds win the slots when there are
+    # more feeds than slots, which is why the registry deliberately alternates
+    # consumer media and institutions rather than front-loading institutions.
+    candidates = []
+    depth = max((len(k) for _, k in per_feed), default=0)
+    for tier in range(depth):
+        for publisher, kept in per_feed:
+            if tier < len(kept):
+                candidates.append(kept[tier])
+
+    logging.info("[%s] %d publisher candidate(s), interleaved from %d feed(s)",
+                 category, len(candidates),
+                 sum(1 for _, k in per_feed if k))
     return candidates
 
 
