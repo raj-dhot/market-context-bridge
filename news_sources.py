@@ -86,13 +86,14 @@ PUBLISHER_FEEDS = {
         # --- major outlets, named desks -------------------------------------
         ("CBC Business",
          "https://www.cbc.ca/webfeed/rss/rss-business"),
-        # UNVERIFIED. Postmedia moved business.financialpost.com to
-        # financialpost.com; which host still serves the feed was not
-        # confirmed. Check both, keep the one that passes.
-        # ("Financial Post", "https://financialpost.com/feed/"),
-        # ("Financial Post", "https://business.financialpost.com/feed/"),
-        # UNVERIFIED.
-        # ("Globe and Mail", "https://www.theglobeandmail.com/business/rss/"),
+        # VERIFIED 2026-09-02: returns RSS 2.0 XML.
+        ("Financial Post",
+         "https://financialpost.com/feed/"),
+        # CONFIRMED DEAD 2026-09-02, do not retry:
+        #   theglobeandmail.com/business/?service=rss  -> serves the HTML
+        #     Report on Business page, not XML. The ?service=rss pattern works
+        #     on some Globe paths but not this one, and the Globe is paywalled
+        #     anyway so trafilatura would get a teaser at best.
     ],
 
     "International & Emerging": [
@@ -113,9 +114,17 @@ PUBLISHER_FEEDS = {
     # that keeps winning is the single highest-value change in this file.
     "Competitor & AI Pulse": [
         ("BetaKit", "https://betakit.com/feed/"),
-        # UNVERIFIED but high value: the Canadian advice-industry trades.
-        # ("Wealth Professional", "https://www.wealthprofessional.ca/rss"),
-        # ("Investment Executive", "https://www.investmentexecutive.com/feed/"),
+        # VERIFIED 2026-09-02: returns RSS 2.0 XML. Investment Executive is
+        # the Canadian advisor trade paper, so it covers the competitive and
+        # regulatory side that BetaKit (tech-first) does not. Having two
+        # complementary sources here matters: this category anchors the AI
+        # objection script every month and ran on ONE feed before.
+        ("Investment Executive",
+         "https://www.investmentexecutive.com/feed/"),
+        # CONFIRMED DEAD 2026-09-02, do not retry:
+        #   investmentexecutive.com/rss-feeds/  -> 404 (the listing page the
+        #     search engine still indexes; the /feed/ endpoint above works)
+        #   wealthprofessional.ca/feed          -> 404
     ],
 }
 
