@@ -653,7 +653,25 @@ def build_news_section():
                 _news_dedupe_key(c["title"])
                 for c in candidates if _is_extractable(c)
             }
-            if len(usable) < NEWS_ITEM_TARGET + 1:
+
+            # Some categories would rather be EMPTY than full of stubs. See
+            # news_sources.NO_AGGREGATOR_FALLBACK for the reasoning: the AI
+            # objection script has a documented no-hook path, so a stub in
+            # Competitor & AI Pulse costs a slot and some research time and
+            # returns nothing citable.
+            no_fallback = (
+                PUBLISHER_FEEDS_AVAILABLE
+                and category in getattr(nsrc, "NO_AGGREGATOR_FALLBACK", ())
+            )
+            if no_fallback and len(usable) < NEWS_ITEM_TARGET + 1:
+                logging.info(
+                    f"[{category}] {len(usable)} extractable item(s) and "
+                    f"aggregator fallback is disabled for this category. "
+                    f"Shipping what the publisher feeds returned; an empty or "
+                    f"thin section here is an accepted outcome."
+                )
+
+            if not no_fallback and len(usable) < NEWS_ITEM_TARGET + 1:
                 logging.info(
                     f"[{category}] only {len(usable)} extractable publisher "
                     f"item(s); topping up from aggregator search"
